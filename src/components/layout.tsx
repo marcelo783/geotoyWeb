@@ -1,4 +1,5 @@
 // src/components/Layout.tsx
+import { CriarPedidoDialog } from "./CriarPedidoDialog"
 import { Sidebar } from "./ui/sidebar"
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -14,6 +15,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <h1 className="text-xl font-semibold text-gray-800">
             Gerenciamento de Pedidos
           </h1>
+          <CriarPedidoDialog/>
         </header>
 
         {/* Conteúdo principal abaixo do header */}
