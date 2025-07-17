@@ -14,8 +14,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import axios from "axios";
 import { ScrollArea } from "./ui/scroll-area";
-
-
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
 
 type Props = {
   ordem: {
@@ -42,7 +41,7 @@ export function VerDetalhesDialog({ ordem }: Props) {
   });
 
   const [loading, setLoading] = useState(false);
-
+  const [open, setOpen] = useState(true);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -74,9 +73,6 @@ export function VerDetalhesDialog({ ordem }: Props) {
       setLoading(false);
     }
   };
-
-
-
 
   return (
     <Dialog>
@@ -193,22 +189,61 @@ export function VerDetalhesDialog({ ordem }: Props) {
                     </span>
                   </div>
                   {/* Observações + botão lado a lado */}
-              <div className="md:col-span-1">
-                <Label htmlFor="observacaoTexto">Observações</Label>
-                <Textarea
-                  id="observacaoTexto"
-                  name="observacaoTexto"
-                  value={form.observacaoTexto}
-                  onChange={handleChange}
-                  className="min-h-[100px]"
-                />
-              </div>
-              <div className="md:col-span-1 flex items-end justify-end pt-6">
-                <Button onClick={handleUpdate} disabled={loading}>
-                  {loading ? "Salvando..." : "Salvar Alterações"}
-                </Button>
-             
-            </div>
+                  {/* Observações + botões lado a lado */}
+                  <div className="md:col-span-1">
+                    <Label htmlFor="observacaoTexto">Observações</Label>
+                    <Textarea
+                      id="observacaoTexto"
+                      name="observacaoTexto"
+                      value={form.observacaoTexto}
+                      onChange={handleChange}
+                      className="min-h-[100px]"
+                    />
+                  </div>
+
+                  {/* Botões de ação */}
+                  <div className="md:col-span-1 flex items-end justify-between pt-6 gap-2">
+                    {/* ALERT DIALOG DE CONFIRMAÇÃO */}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive">Apagar Ordem</Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Tem certeza que deseja apagar?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta ação não pode ser desfeita. A ordem será
+                            permanentemente removida do sistema.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={async () => {
+                              try {
+                                await axios.delete(
+                                  `http://localhost:3000/orders/${ordem._id}`
+                                );
+                                toast.success("Ordem apagada com sucesso");
+                                setOpen(false); // fecha o Dialog principal
+                              } catch (err) {
+                                toast.error("Erro ao apagar ordem");
+                                console.error("Erro ao deletar:", err);
+                              }
+                            }}
+                          >
+                            Confirmar Exclusão
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+
+                    <Button onClick={handleUpdate} disabled={loading}>
+                      {loading ? "Salvando..." : "Salvar Alterações"}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -229,18 +264,15 @@ export function VerDetalhesDialog({ ordem }: Props) {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Editar Mensagem WhatsApp</h3>
+                  <h3 className="text-lg font-semibold mb-2">
+                    Editar Mensagem WhatsApp
+                  </h3>
                   <Textarea
                     disabled
                     placeholder="(em breve)"
                     className="min-h-[100px] text-muted-foreground"
                   />
                 </div>
-
-              
-
-                
-                
               </div>
             </ScrollArea>
           </div>
