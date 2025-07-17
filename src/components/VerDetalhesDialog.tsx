@@ -14,7 +14,18 @@ import { useState } from "react";
 import { toast } from "sonner";
 import axios from "axios";
 import { ScrollArea } from "./ui/scroll-area";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "./ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 type Props = {
   ordem: {
@@ -29,6 +40,7 @@ type Props = {
     valorUnitario?: number;
     valorTotal?: number;
     imagem?: string;
+    imagens?: string[];
     previsaoEntrega?: string;
   };
 };
@@ -42,6 +54,7 @@ export function VerDetalhesDialog({ ordem }: Props) {
 
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(true);
+  const [imagemZoom, setImagemZoom] = useState<string | null>(null);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -93,14 +106,6 @@ export function VerDetalhesDialog({ ordem }: Props) {
                     Editar Ordem: {ordem.produto}
                   </DialogTitle>
                 </DialogHeader>
-
-                {ordem.imagem && (
-                  <img
-                    src={ordem.imagem}
-                    alt="Imagem do produto"
-                    className="w-full h-48 object-contain rounded border mb-4"
-                  />
-                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -188,7 +193,7 @@ export function VerDetalhesDialog({ ordem }: Props) {
                       )}
                     </span>
                   </div>
-                  {/* Observações + botão lado a lado */}
+
                   {/* Observações + botões lado a lado */}
                   <div className="md:col-span-1">
                     <Label htmlFor="observacaoTexto">Observações</Label>
@@ -249,32 +254,57 @@ export function VerDetalhesDialog({ ordem }: Props) {
             </div>
           </div>
 
-          {/* Área direita: Email, vamos ignonar essa div por enquanto WhatsApp e Nota Fiscal */}
-          <div className="w-1/3 p-6 overflow-y-auto max-h-full">
+          {/* Área direita: Imagens anexadas */}
+          <div className="w-1/3 p-6 overflow-y-auto max-h-full border-l">
             <ScrollArea className="h-[calc(85vh-72px)] pr-2">
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Editar Email</h3>
-                  <Textarea
-                    name="mensagemEmail"
-                    value={form.mensagemEmail}
-                    onChange={handleChange}
-                    className="min-h-[140px]"
-                  />
-                </div>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold mb-2">Imagens Anexadas</h3>
 
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">
-                    Editar Mensagem WhatsApp
-                  </h3>
-                  <Textarea
-                    disabled
-                    placeholder="(em breve)"
-                    className="min-h-[100px] text-muted-foreground"
-                  />
-                </div>
+                {ordem.imagens && ordem.imagens.length > 0 ? (
+                  <div className="flex flex-wrap gap-4">
+                    {ordem.imagens.map((url, index) => (
+                      <Tooltip key={index}>
+                        <TooltipTrigger asChild>
+                          <div
+                            className="relative group cursor-pointer"
+                            onClick={() => setImagemZoom(url)}
+                          >
+                            <img
+                              src={url}
+                              alt={`imagem-${index}`}
+                              className="w-28 h-28 object-cover border rounded hover:ring-2 hover:ring-primary"
+                            />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Clique para ampliar</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Nenhuma imagem anexada.
+                  </p>
+                )}
               </div>
             </ScrollArea>
+
+            {/* Dialog de Zoom da imagem */}
+            {imagemZoom && (
+              <Dialog
+                open={!!imagemZoom}
+                onOpenChange={() => setImagemZoom(null)}
+              >
+                <DialogContent className="max-w-3xl p-0 bg-black">
+                  <img
+                    src={imagemZoom}
+                    alt="Zoom"
+                    className="w-full h-auto object-contain"
+                  />
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
         </div>
       </DialogContent>

@@ -21,6 +21,7 @@ type Order = {
   valorTotal?: number;
   frete?: number;
   imagem?: string;
+  imagens?: string[];
   previsaoEntrega?: string;
   status: "novo" | "producao" | "finalizado" | "enviado";
 };
