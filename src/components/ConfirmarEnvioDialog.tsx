@@ -35,13 +35,7 @@ type Props = {
   onCancelado: () => void;
 };
 
-const mensagensDefault: Record<Status, string> = {
-  novo: "Recebemos seu pedido e ele será processado em breve.",
-  producao: "Seu pedido está em produção.",
-  finalizado: "Seu pedido foi finalizado com sucesso.",
-  enviado:
-    "Seu pedido foi enviado. Em breve você receberá os detalhes de rastreio.",
-};
+
 
 export function ConfirmarEnvioDialog({
   emailCliente,
@@ -51,9 +45,9 @@ export function ConfirmarEnvioDialog({
   onConfirmado,
   onCancelado,
 }: Props) {
-  const [mensagem, setMensagem] = useState(
-    `Olá ${cliente},\n\n${mensagensDefault[statusDestino]}\n\nProduto: ${produto}`
-  );
+ 
+  const [mensagem, setMensagem] = useState('');
+
 
   const [arquivosImagens, setArquivosImagens] = useState<File[]>([]);
   const [arquivosPDF, setArquivosPDF] = useState<File[]>([]);
