@@ -26,6 +26,42 @@ type Order = {
   status: "novo" | "producao" | "finalizado" | "enviado";
 };
 
+// Função para obter as classes de cor baseadas no status
+const getStatusColor = (status: Order['status']) => {
+  switch (status) {
+    case 'novo':
+      return {
+        bg: 'bg-blue-500/20',
+        border: 'border-blue-400',
+        text: 'text-blue-100'
+      };
+    case 'producao':
+      return {
+        bg: 'bg-yellow-500/20',
+        border: 'border-yellow-400',
+        text: 'text-yellow-100'
+      };
+    case 'finalizado':
+      return {
+        bg: 'bg-green-500/20',
+        border: 'border-green-400',
+        text: 'text-green-100'
+      };
+    case 'enviado':
+      return {
+        bg: 'bg-purple-500/20',
+        border: 'border-purple-400',
+        text: 'text-purple-100'
+      };
+    default:
+      return {
+        bg: 'bg-gray-500/20',
+        border: 'border-gray-400',
+        text: 'text-gray-100'
+      };
+  }
+};
+
 const statusColumns: Record<
   string,
   { title: string; icon: JSX.Element; color: string }
@@ -94,7 +130,6 @@ export default function OrdensPage() {
     formData.append("codigoRastreamento", data.codigoRastreio)
   }
 
-  // ✅ Tudo vai como 'arquivos', que é o único campo aceito no controller
   data.arquivos?.forEach((file) => {
     formData.append("arquivos", file)
   })
@@ -127,9 +162,8 @@ export default function OrdensPage() {
   }
 }
 
-
   return (
-    <div className="p-4">
+    <div className="p-4 ">
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {Object.entries(statusColumns).map(
@@ -148,68 +182,72 @@ export default function OrdensPage() {
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
                           {icon}
-                          <h2 className="text-base font-semibold">{title}</h2>
+                          <h2 className="text-base font-semibold text-white">{title}</h2>
                         </div>
-                        <span className="text-xs bg-white/10 px-2 py-1 rounded text-muted-foreground">
+                        <span className="text-xs bg-black/20 px-2 py-1 rounded text-white">
                           {ordensDaColuna.length} pedidos
                         </span>
                       </div>
 
-                      <ScrollArea className="h-[750px] pr-2">
+                      <ScrollArea className="max-h-[calc(100vh-180px)] pr-2">
                         <div className="space-y-3">
-                          {ordensDaColuna.map((ordem, index) => (
-                            <Draggable
-                              draggableId={ordem._id}
-                              index={index}
-                              key={ordem._id}
-                            >
-                              {(drag) => (
-                                <div
-                                  ref={drag.innerRef}
-                                  {...drag.draggableProps}
-                                  {...drag.dragHandleProps}
-                                >
-                                  <Card className="bg-white shadow-md border rounded-md hover:shadow-lg transition">
-                                    <CardContent className="p-4 space-y-3">
-                                      <div className="text-sm text-muted-foreground">
-                                        <span className="block text-xs">
-                                          #{ordem._id.slice(-6)}
-                                        </span>
-                                        <span className="font-medium">
-                                          {ordem.cliente}
-                                        </span>
-                                      </div>
+                          {ordensDaColuna.map((ordem, index) => {
+                            const statusColor = getStatusColor(ordem.status);
+                            
+                            return (
+                              <Draggable
+                                draggableId={ordem._id}
+                                index={index}
+                                key={ordem._id}
+                              >
+                                {(drag) => (
+                                  <div
+                                    ref={drag.innerRef}
+                                    {...drag.draggableProps}
+                                    {...drag.dragHandleProps}
+                                  >
+                                    <Card className={`shadow-lg border rounded-md hover:shadow-xl transition ${statusColor.bg} ${statusColor.border}`}>
+                                      <CardContent className="p-4 space-y-3">
+                                        <div className="text-sm">
+                                          <span className={`block text-xs ${statusColor.text}`}>
+                                            #{ordem._id.slice(-6)}
+                                          </span>
+                                          <span className="font-medium text-white truncate block">
+                                            {ordem.cliente}
+                                          </span>
+                                        </div>
 
-                                      <p className="text-base font-semibold truncate">
-                                        {ordem.produto}
-                                      </p>
+                                        <p className={`text-base font-semibold ${statusColor.text} line-clamp-2 min-h-[2.5rem]`}>
+                                          {ordem.produto}
+                                        </p>
 
-                                      {ordem.imagem && (
-                                        <img
-                                          src={ordem.imagem}
-                                          alt="Imagem"
-                                          className="w-full h-32 object-contain rounded border"
-                                        />
-                                      )}
+                                        {ordem.imagem && (
+                                          <img
+                                            src={ordem.imagem}
+                                            alt="Imagem"
+                                            className="w-full h-32 object-contain rounded border border-white/10 bg-black/20"
+                                          />
+                                        )}
 
-                                      <div className="flex justify-between text-xs text-muted-foreground">
-                                        <span>
-                                          {formatDate(
-                                            ordem.previsaoEntrega?.split("T")[0]
-                                          )}
-                                        </span>
-                                        <span>
-                                          {formatCurrency(ordem.valorUnitario)}
-                                        </span>
-                                      </div>
+                                        <div className={`flex justify-between text-xs ${statusColor.text}`}>
+                                          <span>
+                                            {formatDate(
+                                              ordem.previsaoEntrega?.split("T")[0]
+                                            )}
+                                          </span>
+                                          <span>
+                                            {formatCurrency(ordem.valorUnitario)}
+                                          </span>
+                                        </div>
 
-                                      <VerDetalhesDialog ordem={ordem} />
-                                    </CardContent>
-                                  </Card>
-                                </div>
-                              )}
-                            </Draggable>
-                          ))}
+                                        <VerDetalhesDialog ordem={ordem} />
+                                      </CardContent>
+                                    </Card>
+                                  </div>
+                                )}
+                              </Draggable>
+                            )
+                          })}
                           {provided.placeholder}
                         </div>
                       </ScrollArea>
