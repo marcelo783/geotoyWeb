@@ -1,8 +1,9 @@
 // src/components/layout/Layout.tsx
+import { Outlet } from "react-router-dom";
 import { Sidebar } from "../ui/sidebar";
 import { Header } from "./Header";
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export function Layout( ) {
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900">
       <Sidebar />
@@ -11,7 +12,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Header />
         
         <main className="flex-1 overflow-y-auto p-4">
-          {children}
+         
+           <Outlet />
         </main>
       </div>
     </div>

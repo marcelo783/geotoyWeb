@@ -152,12 +152,12 @@ export function CriarPedidoDialog() {
         <Button variant="default">Novo Pedido</Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-5xl h-[90vh] overflow-hidden p-0">
+      <DialogContent className="max-w-5xl h-[90vh] overflow-hidden p-0 bg-black/50 backdrop-blur-sm text-amber-50">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle>Novo Pedido via PDF</DialogTitle>
         </DialogHeader>
 
-        <div className="flex h-full px-6 gap-6">
+        <div className="flex h-full px-6 gap-6 ">
           {/* Lado esquerdo: formulário */}
           <ScrollArea className="flex-1 pr-4 pt-4 pb-32">
             {!dados ? (
@@ -264,6 +264,7 @@ export function CriarPedidoDialog() {
           </ScrollArea>
 
           {/* Lado direito: imagens */}
+          {dados && (
           <div className="w-80 pt-4 flex flex-col gap-4 border-l pl-4">
             <div>
               <Label className="flex items-center gap-2">
@@ -308,7 +309,9 @@ export function CriarPedidoDialog() {
               </div>
             )}
           </div>
+          )}
         </div>
+        
 
         {/* Dialog para visualizar imagem em zoom */}
         {/* Dialog de Zoom da imagem */}
@@ -321,5 +324,5 @@ export function CriarPedidoDialog() {
         )}
       </DialogContent>
     </Dialog>
-  );
+  );       
 }

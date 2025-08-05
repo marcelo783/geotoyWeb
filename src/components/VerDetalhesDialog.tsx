@@ -1,5 +1,6 @@
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -13,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { toast } from "sonner";
 import axios from "axios";
-import { ScrollArea } from "./ui/scroll-area";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,10 +27,11 @@ import {
   AlertDialogTrigger,
 } from "./ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { X } from "lucide-react";
 
 type Props = {
   ordem: {
-    _id: string;
+    id: string;
     produto: string;
     cliente: string;
     email?: string;
@@ -53,7 +55,7 @@ export function VerDetalhesDialog({ ordem }: Props) {
   });
 
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(true);
+  const [setOpen] = useState(true);
   const [imagemZoom, setImagemZoom] = useState<string | null>(null);
 
   const handleChange = (
@@ -78,7 +80,7 @@ export function VerDetalhesDialog({ ordem }: Props) {
         mensagemEmail: form.mensagemEmail,
       };
 
-      await axios.patch(`http://localhost:3000/orders/${ordem._id}`, payload);
+      await axios.patch(`http://localhost:3000/orders/${ordem.id}`, payload);
       toast.success("Ordem atualizada com sucesso");
     } catch (err) {
       toast.error("Erro ao atualizar a ordem");
@@ -95,10 +97,10 @@ export function VerDetalhesDialog({ ordem }: Props) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-6xl w-full h-[85vh] p-0">
+      <DialogContent className="max-w-6xl w-full h-[85vh] p-0 border-none bg-black/50 backdrop-blur-sm text-amber-50">
         <div className="flex h-full">
           {/* Área esquerda */}
-          <div className="w-2/3 flex flex-col h-full p-4 border-r">
+          <div className="w-2/3 flex flex-col h-full p-4 ">
             <div className="flex-1 min-h-0">
               <div className="pb-40">
                 <DialogHeader>
@@ -107,7 +109,7 @@ export function VerDetalhesDialog({ ordem }: Props) {
                   </DialogTitle>
                 </DialogHeader>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                   <div>
                     <Label htmlFor="cliente">Cliente</Label>
                     <Input
@@ -194,7 +196,8 @@ export function VerDetalhesDialog({ ordem }: Props) {
                     </span>
                   </div>
 
-                  {/* Observações + botões lado a lado */}
+                  {/* 🔽 Metade inferior: Responsável pela pintura */}
+
                   <div className="md:col-span-1">
                     <Label htmlFor="observacaoTexto">Observações</Label>
                     <Textarea
@@ -202,52 +205,35 @@ export function VerDetalhesDialog({ ordem }: Props) {
                       name="observacaoTexto"
                       value={form.observacaoTexto}
                       onChange={handleChange}
-                      className="min-h-[100px]"
+                      className="min-h-[50px] max-h-[100px] overflow-y-auto"
                     />
                   </div>
 
                   {/* Botões de ação */}
-                  <div className="md:col-span-1 flex items-end justify-between pt-6 gap-2">
-                    {/* ALERT DIALOG DE CONFIRMAÇÃO */}
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive">Apagar Ordem</Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Tem certeza que deseja apagar?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esta ação não pode ser desfeita. A ordem será
-                            permanentemente removida do sistema.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={async () => {
-                              try {
-                                await axios.delete(
-                                  `http://localhost:3000/orders/${ordem._id}`
-                                );
-                                toast.success("Ordem apagada com sucesso");
-                                setOpen(false); // fecha o Dialog principal
-                              } catch (err) {
-                                toast.error("Erro ao apagar ordem");
-                                console.error("Erro ao deletar:", err);
-                              }
-                            }}
-                          >
-                            Confirmar Exclusão
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-
-                    <Button onClick={handleUpdate} disabled={loading}>
-                      {loading ? "Salvando..." : "Salvar Alterações"}
-                    </Button>
+                  <div className="h-1/2  mt-4 pt-4 ">
+                    <h4 className="text-lg font-semibold mb-2">
+                      Responsável pela pintura
+                    </h4>
+                    <div className=" flex justify-start gap-15 ">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="responsavel"
+                          value="Juliano"
+                          className="accent-[var(--primary)]"
+                        />
+                        <span>Juliano</span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="responsavel"
+                          value="Geraldo"
+                          className="accent-[var(--primary)]"
+                        />
+                        <span>Geraldo</span>
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -255,52 +241,105 @@ export function VerDetalhesDialog({ ordem }: Props) {
           </div>
 
           {/* Área direita: Imagens anexadas */}
-          <div className="w-1/3 p-6 overflow-y-auto max-h-full border-l">
-            <ScrollArea className="h-[calc(85vh-72px)] pr-2">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold mb-2">Imagens Anexadas</h3>
+          <div className="w-1/3 h-full p-6  flex flex-col">
+            {/* 🔼 Metade superior: Imagens */}
+            <div className="h-1/2 overflow-y-auto pr-2">
+              <h3 className="text-lg font-semibold mb-2">Imagens Anexadas</h3>
 
-                {ordem.imagens && ordem.imagens.length > 0 ? (
-                  <div className="flex flex-wrap gap-4">
-                    {ordem.imagens.map((url, index) => (
-                      <Tooltip key={index}>
-                        <TooltipTrigger asChild>
-                          <div
-                            className="relative group cursor-pointer"
-                            onClick={() => setImagemZoom(url)}
-                          >
-                            <img
-                              src={url}
-                              alt={`imagem-${index}`}
-                              className="w-28 h-28 object-cover border rounded hover:ring-2 hover:ring-primary"
-                            />
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Clique para ampliar</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Nenhuma imagem anexada.
-                  </p>
-                )}
-              </div>
-            </ScrollArea>
+              {ordem.imagens && ordem.imagens.length > 0 ? (
+                <div className="flex flex-wrap gap-4">
+                  {ordem.imagens.map((url, index) => (
+                    <Tooltip key={index}>
+                      <TooltipTrigger asChild>
+                        <div
+                          className="relative group cursor-pointer"
+                          onClick={() => setImagemZoom(url)}
+                        >
+                          <img
+                            src={url}
+                            alt={`imagem-${index}`}
+                            className="w-28 h-28 object-cover border rounded hover:ring-2 hover:ring-primary"
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Clique para ampliar</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Nenhuma imagem anexada.
+                </p>
+              )}
+            </div>
 
-            {/* Dialog de Zoom da imagem */}
+            {/* Observações + botões lado a lado */}
+            <div className="md:col-span-1 flex items-end justify-between pt-6 gap-2">
+              {/* ALERT DIALOG DE CONFIRMAÇÃO */}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive">Apagar Ordem</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Tem certeza que deseja apagar?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação não pode ser desfeita. A ordem será
+                      permanentemente removida do sistema.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={async () => {
+                        try {
+                          await axios.delete(
+                            `http://localhost:3000/orders/${ordem.id}`
+                          );
+                          toast.success("Ordem apagada com sucesso");
+                          setOpen(false); // fecha o Dialog principal
+                        } catch (err) {
+                          toast.error("Erro ao apagar ordem");
+                          console.error("Erro ao deletar:", err);
+                        }
+                      }}
+                    >
+                      Confirmar Exclusão
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <Button onClick={handleUpdate} disabled={loading}>
+                {loading ? "Salvando..." : "Salvar Alterações"}
+              </Button>
+            </div>
+
             {imagemZoom && (
               <Dialog
                 open={!!imagemZoom}
                 onOpenChange={() => setImagemZoom(null)}
               >
-                <DialogContent className="max-w-3xl p-0 bg-black">
+                <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 bg-transparent border-none shadow-none flex items-center justify-center overflow-hidden">
+                  {/* Botão de Fechar */}
+                  <DialogClose asChild>
+                    <button
+                      aria-label="Fechar"
+                      className="absolute top-4 right-4 bg-white text-[var(--primary)] p-2 rounded-full shadow hover:bg-muted transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </DialogClose>
+
+                  {/* Imagem */}
                   <img
                     src={imagemZoom}
                     alt="Zoom"
-                    className="w-full h-auto object-contain"
+                    className="max-w-full max-h-[80vh] object-contain"
                   />
                 </DialogContent>
               </Dialog>

@@ -8,9 +8,10 @@ import { formatCurrency, formatDate } from "@/utils/format";
 import { ConfirmarEnvioDialog } from "@/components/ConfirmarEnvioDialog";
 import { Plus, Clock, PackageCheck, Send } from "lucide-react";
 import { toast } from "sonner";
+import Cookies from "js-cookie";
 
 type Order = {
-  _id: string;
+  id: string;
   cliente: string;
   produto: string;
   email?: string;
@@ -27,37 +28,37 @@ type Order = {
 };
 
 // Função para obter as classes de cor baseadas no status
-const getStatusColor = (status: Order['status']) => {
+const getStatusColor = (status: Order["status"]) => {
   switch (status) {
-    case 'novo':
+    case "novo":
       return {
-        bg: 'bg-blue-500/20',
-        border: 'border-blue-400',
-        text: 'text-blue-100'
+        bg: "bg-blue-500/20",
+        border: "border-blue-400",
+        text: "text-blue-100",
       };
-    case 'producao':
+    case "producao":
       return {
-        bg: 'bg-yellow-500/20',
-        border: 'border-yellow-400',
-        text: 'text-yellow-100'
+        bg: "bg-yellow-500/20",
+        border: "border-yellow-400",
+        text: "text-yellow-100",
       };
-    case 'finalizado':
+    case "finalizado":
       return {
-        bg: 'bg-green-500/20',
-        border: 'border-green-400',
-        text: 'text-green-100'
+        bg: "bg-green-500/20",
+        border: "border-green-400",
+        text: "text-green-100",
       };
-    case 'enviado':
+    case "enviado":
       return {
-        bg: 'bg-purple-500/20',
-        border: 'border-purple-400',
-        text: 'text-purple-100'
+        bg: "bg-purple-500/20",
+        border: "border-purple-400",
+        text: "text-purple-100",
       };
     default:
       return {
-        bg: 'bg-gray-500/20',
-        border: 'border-gray-400',
-        text: 'text-gray-100'
+        bg: "bg-gray-500/20",
+        border: "border-gray-400",
+        text: "text-gray-100",
       };
   }
 };
@@ -95,18 +96,24 @@ export default function OrdensPage() {
     "novo" | "producao" | "finalizado" | "enviado" | null
   >(null);
   const [showDialog, setShowDialog] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+ 
+
 
   useEffect(() => {
-    axios.get("http://localhost:3000/orders").then((res) => {
-      setOrdens(res.data);
-    });
+    axios
+      .get("http://localhost:3000/orders", { withCredentials: true })
+      .then((res) => {
+        setOrdens(res.data);
+      });
   }, []);
 
   const onDragEnd = (result: any) => {
     const { destination, source, draggableId } = result;
     if (!destination || destination.droppableId === source.droppableId) return;
 
-    const ordem = ordens.find((o) => o._id === draggableId);
+    const ordem = ordens.find((o) => o.id === draggableId);
     if (!ordem) return;
 
     setOrdemMovida(ordem);
@@ -115,52 +122,60 @@ export default function OrdensPage() {
   };
 
   const handleConfirmacao = async (data: {
-  mensagem: string
-  arquivos?: File[]
-  codigoRastreio?: string
-}) => {
-  if (!ordemMovida || !statusDestino) return
+    mensagem: string;
+    arquivos?: File[];
+    codigoRastreio?: string;
+  }) => {
+    if (!ordemMovida || !statusDestino) return;
 
-  const formData = new FormData()
-  formData.append("mensagem", data.mensagem)
-  formData.append("status", statusDestino)
-  formData.append("email", ordemMovida.email || "")
+    const formData = new FormData();
+    formData.append("mensagem", data.mensagem);
+    formData.append("status", statusDestino);
+    formData.append("email", ordemMovida.email || "");
 
-  if (data.codigoRastreio) {
-    formData.append("codigoRastreamento", data.codigoRastreio)
-  }
+    if (data.codigoRastreio) {
+      formData.append("codigoRastreamento", data.codigoRastreio);
+    }
 
-  data.arquivos?.forEach((file) => {
-    formData.append("arquivos", file)
-  })
+    data.arquivos?.forEach((file) => {
+      formData.append("arquivos", file);
+    });
 
-  try {
-    await axios.post(
-      `http://localhost:3000/orders/${ordemMovida._id}/enviar-email`,
-      formData
-    )
+    try {
+      await axios.post(
+        `http://localhost:3000/orders/${ordemMovida.id}/enviar-email`,
+        formData,
+        { withCredentials: true }
+      );
 
-    await axios.patch(
-      `http://localhost:3000/orders/${ordemMovida._id}`,
-      { status: statusDestino }
-    )
+      await axios.patch(
+        `http://localhost:3000/orders/${ordemMovida.id}`,
+        { status: statusDestino },
+        { withCredentials: true }
+      );
 
-    setOrdens((prev) =>
-      prev.map((o) =>
-        o._id === ordemMovida._id
-          ? { ...o, status: statusDestino }
-          : o
-      )
-    )
+      setOrdens((prev) =>
+        prev.map((o) =>
+          o.id === ordemMovida.id ? { ...o, status: statusDestino } : o
+        )
+      );
 
-    setShowDialog(false)
-    setOrdemMovida(null)
-    setStatusDestino(null)
-  } catch (err: any) {
-    console.error(err.response?.data || err)
-    toast.error("Erro ao enviar dados")
-  }
-}
+       toast.success(
+      `Pedido #${ordemMovida.id.slice(-6)} movido para "${statusDestino}" com sucesso!`,{
+         icon: "🚀",
+  duration: 5000,
+      }
+    );
+
+
+      setShowDialog(false);
+      setOrdemMovida(null);
+      setStatusDestino(null);
+    } catch (err: any) {
+      console.error(err.response?.data || err);
+      toast.error("Erro ao enviar dados");
+    }
+  };
 
   return (
     <div className="p-4 ">
@@ -182,7 +197,9 @@ export default function OrdensPage() {
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
                           {icon}
-                          <h2 className="text-base font-semibold text-white">{title}</h2>
+                          <h2 className="text-base font-semibold text-white">
+                            {title}
+                          </h2>
                         </div>
                         <span className="text-xs bg-black/20 px-2 py-1 rounded text-white">
                           {ordensDaColuna.length} pedidos
@@ -193,12 +210,13 @@ export default function OrdensPage() {
                         <div className="space-y-3">
                           {ordensDaColuna.map((ordem, index) => {
                             const statusColor = getStatusColor(ordem.status);
-                            
+                             const primeiraImagem = ordem.imagens?.[0];
+
                             return (
                               <Draggable
-                                draggableId={ordem._id}
+                                draggableId={ordem.id}
                                 index={index}
-                                key={ordem._id}
+                                key={ordem.id}
                               >
                                 {(drag) => (
                                   <div
@@ -206,37 +224,50 @@ export default function OrdensPage() {
                                     {...drag.draggableProps}
                                     {...drag.dragHandleProps}
                                   >
-                                    <Card className={`shadow-lg border rounded-md hover:shadow-xl transition ${statusColor.bg} ${statusColor.border}`}>
+                                    <Card
+                                      className={`shadow-lg border rounded-md hover:shadow-xl transition ${statusColor.bg} ${statusColor.border}`}
+                                    >
                                       <CardContent className="p-4 space-y-3">
                                         <div className="text-sm">
-                                          <span className={`block text-xs ${statusColor.text}`}>
-                                            #{ordem._id.slice(-6)}
+                                          <span
+                                            className={`block text-xs ${statusColor.text}`}
+                                          >
+                                            #{ordem.id.slice(-6)}
                                           </span>
                                           <span className="font-medium text-white truncate block">
                                             {ordem.cliente}
                                           </span>
                                         </div>
 
-                                        <p className={`text-base font-semibold ${statusColor.text} line-clamp-2 min-h-[2.5rem]`}>
+                                        <p
+                                          className={`text-base font-semibold ${statusColor.text} line-clamp-2 min-h-[2.5rem]`}
+                                        >
                                           {ordem.produto}
                                         </p>
 
-                                        {ordem.imagem && (
+                                        {primeiraImagem && (
+
                                           <img
-                                            src={ordem.imagem}
+                                            src={primeiraImagem}
                                             alt="Imagem"
-                                            className="w-full h-32 object-contain rounded border border-white/10 bg-black/20"
+                                            className="w-full h-32 object-cover rounded border border-white/10 bg-black/20"
                                           />
                                         )}
 
-                                        <div className={`flex justify-between text-xs ${statusColor.text}`}>
+                                        <div
+                                          className={`flex justify-between text-xs ${statusColor.text}`}
+                                        >
                                           <span>
                                             {formatDate(
-                                              ordem.previsaoEntrega?.split("T")[0]
+                                              ordem.previsaoEntrega?.split(
+                                                "T"
+                                              )[0]
                                             )}
                                           </span>
                                           <span>
-                                            {formatCurrency(ordem.valorUnitario)}
+                                            {formatCurrency(
+                                              ordem.valorUnitario
+                                            )}
                                           </span>
                                         </div>
 
@@ -246,7 +277,7 @@ export default function OrdensPage() {
                                   </div>
                                 )}
                               </Draggable>
-                            )
+                            );
                           })}
                           {provided.placeholder}
                         </div>
@@ -262,7 +293,7 @@ export default function OrdensPage() {
 
       {showDialog && ordemMovida && statusDestino && (
         <ConfirmarEnvioDialog
-          ordemId={ordemMovida._id}
+          ordemId={ordemMovida.id}
           cliente={ordemMovida.cliente}
           produto={ordemMovida.produto}
           emailCliente={ordemMovida.email}

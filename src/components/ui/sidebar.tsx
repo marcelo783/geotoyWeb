@@ -1,4 +1,4 @@
-import { Menu, Package, Send, Settings } from "lucide-react"
+import { LayoutDashboard, Menu, Package, Send, Settings } from "lucide-react"
 import { useState } from "react"
 import logo from "../../../public/Camada 1.png"
 
@@ -6,6 +6,8 @@ const navItems = [
   { label: "Ordens", icon: Package, href: "/ordens" },
   { label: "Enviados", icon: Send, href: "/enviados" },
   { label: "Configuração", icon: Settings, href: "/configuracao" },
+  { label: "Dashboard", icon: LayoutDashboard, href: "/Dashboard" },
+
 ]
 
 export function Sidebar() {
