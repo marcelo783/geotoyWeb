@@ -38,6 +38,7 @@ type Props = {
     telefone?: string;
     endereco?: string;
     observacao?: string[];
+    pintor?: string;
     frete?: number;
     valorUnitario?: number;
     valorTotal?: number;
@@ -55,7 +56,8 @@ export function VerDetalhesDialog({ ordem }: Props) {
   });
 
   const [loading, setLoading] = useState(false);
-  const [setOpen] = useState(true);
+  const [open, setOpen] = useState(true);
+
   const [imagemZoom, setImagemZoom] = useState<string | null>(null);
 
   const handleChange = (
@@ -75,6 +77,7 @@ export function VerDetalhesDialog({ ordem }: Props) {
         endereco: form.endereco,
         observacao: form.observacaoTexto.split("\n"),
         frete: Number(form.frete),
+        pintor: form.pintor,
         valorUnitario: Number(form.valorUnitario),
         previsaoEntrega: form.previsaoEntrega,
         mensagemEmail: form.mensagemEmail,
@@ -218,20 +221,29 @@ export function VerDetalhesDialog({ ordem }: Props) {
                       <label className="flex items-center gap-2">
                         <input
                           type="radio"
-                          name="responsavel"
-                          value="Juliano"
-                          className="accent-[var(--primary)]"
-                        />
-                        <span>Juliano</span>
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="responsavel"
+                          name="pintor"
                           value="Geraldo"
+                          checked={form.pintor === "Geraldo"}
+                          onChange={(e) =>
+                            setForm({ ...form, pintor: e.target.value })
+                          }
                           className="accent-[var(--primary)]"
                         />
                         <span>Geraldo</span>
+                      </label>
+
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="pintor"
+                          value="Juliano"
+                          checked={form.pintor === "Juliano"}
+                          onChange={(e) =>
+                            setForm({ ...form, pintor: e.target.value })
+                          }
+                          className="accent-[var(--primary)]"
+                        />
+                        <span>Juliano</span>
                       </label>
                     </div>
                   </div>

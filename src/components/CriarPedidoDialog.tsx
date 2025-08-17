@@ -122,6 +122,7 @@ export function CriarPedidoDialog() {
         "produto",
         "previsaoEntrega",
         "frete",
+        "tipoFrete",
         "valorUnitario",
         "valorTotal",
       ].forEach((key) => formData.append(key, String(form[key])));

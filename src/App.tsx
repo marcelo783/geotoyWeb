@@ -9,6 +9,7 @@ import LoginPage from "./pages/login/login";
 
 import { Toaster } from "sonner";
 import LoginForm from "./components/login-form";
+import FeedbackPage from "./pages/feedback/FeedbackPage";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
             <Route index element={<Navigate to="/ordens" />} />
             <Route path="ordens" element={<OrdensPage />} />
             <Route path="dashboard" element={<DashboardPage />} />
+             <Route path="feedback" element={<FeedbackPage />} />
           </Route>
 
           {/* ROTAS SEM LAYOUT */}
