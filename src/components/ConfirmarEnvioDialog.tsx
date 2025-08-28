@@ -17,9 +17,10 @@ import {
   Trash2,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
-type Status = "novo" | "producao" | "finalizado" | "enviado";
+type Status = "novo" | "producao" | "finalizado" | "enviado" | "feedback";
 
 type Props = {
   ordemId: string;
@@ -48,11 +49,26 @@ export function ConfirmarEnvioDialog({
  
   const [mensagem, setMensagem] = useState('');
 
-
+  const [loadingMensagem, setLoadingMensagem] = useState(true);
   const [arquivosImagens, setArquivosImagens] = useState<File[]>([]);
   const [arquivosPDF, setArquivosPDF] = useState<File[]>([]);
   const [codigoRastreio, setCodigoRastreio] = useState("");
   const [imagemZoom, setImagemZoom] = useState<string | null>(null);
+
+useEffect(() => {
+  setLoadingMensagem(true);
+  axios
+    .get(`http://localhost:3000/orders/mensagens/${statusDestino}`)
+    .then((res) => {
+      setMensagem(res.data.mensagem); // backend retorna { assunto, mensagem, gifUrl }
+    })
+    .catch((err) => {
+      console.error("Erro ao buscar mensagem:", err);
+      setMensagem(""); // fallback vazio
+    })
+    .finally(() => setLoadingMensagem(false));
+}, [statusDestino]);
+
 
   const handleSubmit = () => {
     onConfirmado({
@@ -61,6 +77,8 @@ export function ConfirmarEnvioDialog({
       codigoRastreio,
     });
   };
+
+  
 
   return (
     <Dialog open onOpenChange={onCancelado}>
@@ -85,7 +103,7 @@ export function ConfirmarEnvioDialog({
               Mensagem de Email
             </Label>
             <Textarea
-              value={mensagem}
+             value={loadingMensagem ? "Carregando mensagem..." : mensagem}
               onChange={(e) => setMensagem(e.target.value)}
               className="min-h-[140px]"
             />

@@ -6,7 +6,7 @@ import { VerDetalhesDialog } from "@/components/VerDetalhesDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatCurrency, formatDate } from "@/utils/format";
 import { ConfirmarEnvioDialog } from "@/components/ConfirmarEnvioDialog";
-import { Plus, Clock, PackageCheck, Send } from "lucide-react";
+import { Plus, Clock, PackageCheck, Send, MessageCircle } from "lucide-react"; // 🆕 import do ícone de feedback
 import { toast } from "sonner";
 import Cookies from "js-cookie";
 
@@ -24,7 +24,7 @@ type Order = {
   imagem?: string;
   imagens?: string[];
   previsaoEntrega?: string;
-  status: "novo" | "producao" | "finalizado" | "enviado";
+  status: "novo" | "producao" | "finalizado" | "enviado" | "feedback"; // 🆕 adiciona feedback
 };
 
 // Função para obter as classes de cor baseadas no status
@@ -53,6 +53,12 @@ const getStatusColor = (status: Order["status"]) => {
         bg: "bg-purple-500/20",
         border: "border-purple-400",
         text: "text-purple-100",
+      };
+    case "feedback": // 🆕 cor exclusiva para feedback
+      return {
+        bg: "bg-pink-500/20",
+        border: "border-pink-400",
+        text: "text-pink-100",
       };
     default:
       return {
@@ -87,19 +93,22 @@ const statusColumns: Record<
     icon: <Send className="w-4 h-4 text-purple-500" />,
     color: "bg-purple-500/10 border border-purple-300",
   },
+  feedback: { // 🆕 nova coluna feedback
+    title: "Feedback",
+    icon: <MessageCircle className="w-4 h-4 text-pink-500" />,
+    color: "bg-pink-500/10 border border-pink-300",
+  },
 };
 
 export default function OrdensPage() {
   const [ordens, setOrdens] = useState<Order[]>([]);
   const [ordemMovida, setOrdemMovida] = useState<Order | null>(null);
   const [statusDestino, setStatusDestino] = useState<
-    "novo" | "producao" | "finalizado" | "enviado" | null
+    "novo" | "producao" | "finalizado" | "enviado" | "feedback" | null // 🆕 inclui feedback
   >(null);
   const [showDialog, setShowDialog] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
- 
-
 
   useEffect(() => {
     axios
@@ -117,70 +126,83 @@ export default function OrdensPage() {
     if (!ordem) return;
 
     setOrdemMovida(ordem);
-    setStatusDestino(destination.droppableId);
+    setStatusDestino(destination.droppableId as Order["status"]); // 🆕 garante que pode ser feedback
     setShowDialog(true);
   };
 
-  const handleConfirmacao = async (data: {
-    mensagem: string;
-    arquivos?: File[];
-    codigoRastreio?: string;
-  }) => {
-    if (!ordemMovida || !statusDestino) return;
+ const handleConfirmacao = async (data: {
+  mensagem: string;
+  arquivos?: File[];
+  codigoRastreio?: string;
+}) => {
+  if (!ordemMovida || !statusDestino) return;
 
-    const formData = new FormData();
-    formData.append("mensagem", data.mensagem);
-    formData.append("status", statusDestino);
-    formData.append("email", ordemMovida.email || "");
+  const formData = new FormData();
+  formData.append("mensagem", data.mensagem);
+  formData.append("status", statusDestino);
+  formData.append("email", ordemMovida.email || "");
 
-    if (data.codigoRastreio) {
-      formData.append("codigoRastreamento", data.codigoRastreio);
-    }
+  if (data.codigoRastreio) {
+    formData.append("codigoRastreamento", data.codigoRastreio);
+  }
 
-    data.arquivos?.forEach((file) => {
-      formData.append("arquivos", file);
-    });
+  data.arquivos?.forEach((file) => {
+    formData.append("arquivos", file);
+  });
 
-    try {
-      await axios.post(
-        `http://localhost:3000/orders/${ordemMovida.id}/enviar-email`,
-        formData,
+  try {
+    // 1) Sempre dispara e-mail
+    await axios.post(
+      `http://localhost:3000/orders/${ordemMovida.id}/enviar-email`,
+      formData,
+      { withCredentials: true }
+    );
+
+    // 2) Se for enviado → usa o PATCH especial
+    if (statusDestino === "enviado") {
+      await axios.patch(
+        `http://localhost:3000/orders/${ordemMovida.id}/enviar`,
+        { codigoRastreamento: data.codigoRastreio },
         { withCredentials: true }
       );
-
+    } else {
+      // Caso contrário → patch genérico
       await axios.patch(
         `http://localhost:3000/orders/${ordemMovida.id}`,
         { status: statusDestino },
         { withCredentials: true }
       );
+    }
 
-      setOrdens((prev) =>
-        prev.map((o) =>
-          o.id === ordemMovida.id ? { ...o, status: statusDestino } : o
-        )
-      );
+    // 3) Atualiza estado local
+    setOrdens((prev) =>
+      prev.map((o) =>
+        o.id === ordemMovida.id ? { ...o, status: statusDestino } : o
+      )
+    );
 
-       toast.success(
-      `Pedido #${ordemMovida.id.slice(-6)} movido para "${statusDestino}" com sucesso!`,{
-         icon: "🚀",
-  duration: 5000,
+    toast.success(
+      `Pedido #${ordemMovida.id.slice(-6)} movido para "${statusDestino}" com sucesso!`,
+      {
+        icon: "🚀",
+        duration: 5000,
       }
     );
 
+    setShowDialog(false);
+    setOrdemMovida(null);
+    setStatusDestino(null);
+  } catch (err: any) {
+    console.error(err.response?.data || err);
+    toast.error("Erro ao enviar dados");
+  }
+};
 
-      setShowDialog(false);
-      setOrdemMovida(null);
-      setStatusDestino(null);
-    } catch (err: any) {
-      console.error(err.response?.data || err);
-      toast.error("Erro ao enviar dados");
-    }
-  };
 
   return (
-    <div className="p-4 ">
+    <div className="p-4  overflow-x-auto"> {/* 🆕 adiciona scroll horizontal */}
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="flex gap-4 min-w-[1200px]"> {/* 🆕 flex horizontal em vez de grid */}
           {Object.entries(statusColumns).map(
             ([statusKey, { title, icon, color }]) => {
               const ordensDaColuna = ordens.filter(
@@ -192,7 +214,7 @@ export default function OrdensPage() {
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={`rounded-xl p-4 flex flex-col transition-colors ${color}`}
+                      className={`rounded-xl p-4 flex flex-col transition-colors w-72 ${color}`} // 🆕 largura fixa
                     >
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
@@ -210,7 +232,7 @@ export default function OrdensPage() {
                         <div className="space-y-3">
                           {ordensDaColuna.map((ordem, index) => {
                             const statusColor = getStatusColor(ordem.status);
-                             const primeiraImagem = ordem.imagens?.[0];
+                            const primeiraImagem = ordem.imagens?.[0];
 
                             return (
                               <Draggable
@@ -246,7 +268,6 @@ export default function OrdensPage() {
                                         </p>
 
                                         {primeiraImagem && (
-
                                           <img
                                             src={primeiraImagem}
                                             alt="Imagem"

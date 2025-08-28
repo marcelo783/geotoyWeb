@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { toast } from "sonner";
 import axios from "axios";
+//import { OrderForm, OrderStatus } from "@/types/orders";
 
 import {
   AlertDialog,
@@ -28,6 +29,7 @@ import {
 } from "./ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { X } from "lucide-react";
+import type { OrderUpdatePayload } from "@/types/order";
 
 type Props = {
   ordem: {
@@ -67,30 +69,63 @@ export function VerDetalhesDialog({ ordem }: Props) {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleUpdate = async () => {
+const handleUpdate = async () => {
     setLoading(true);
     try {
-      const payload = {
+      const payload: OrderUpdatePayload = {
+        id: ordem.id,
         cliente: form.cliente,
         email: form.email,
         telefone: form.telefone,
         endereco: form.endereco,
-        observacao: form.observacaoTexto.split("\n"),
-        frete: Number(form.frete),
         pintor: form.pintor,
-        valorUnitario: Number(form.valorUnitario),
-        previsaoEntrega: form.previsaoEntrega,
-        mensagemEmail: form.mensagemEmail,
       };
+
+      // Observação – só se quiser atualizar (inclusive para limpar)
+      const obsArray = (form.observacaoTexto || "")
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (obsArray.length > 0) {
+        payload.observacao = obsArray;
+      }
+
+      // Números somente se válidos
+      if (form.frete !== undefined && !Number.isNaN(Number(form.frete))) {
+        payload.frete = Number(form.frete);
+      }
+      if (
+        form.valorUnitario !== undefined &&
+        !Number.isNaN(Number(form.valorUnitario))
+      ) {
+        payload.valorUnitario = Number(form.valorUnitario);
+      }
+
+      // Data somente se existir
+      if (form.previsaoEntrega) {
+        payload.previsaoEntrega = new Date(
+          form.previsaoEntrega
+        ).toISOString();
+      }
+
+      // Mensagem de e-mail (parcial, só os campos que usuário editou)
+      //if (form.mensagemEmail) {
+     //   payload.mensagemEmail = form.mensagemEmail;
+   //   }
+
+      console.log("PATCH payload →", payload);
 
       await axios.patch(`http://localhost:3000/orders/${ordem.id}`, payload);
       toast.success("Ordem atualizada com sucesso");
     } catch (err) {
       toast.error("Erro ao atualizar a ordem");
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
+
+
 
   return (
     <Dialog>

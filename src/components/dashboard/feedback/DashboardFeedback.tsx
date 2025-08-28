@@ -1,7 +1,7 @@
+// components/dashboard/feedback/dashboard-feedback.tsx
 "use client";
 
 import { useState, useEffect } from "react";
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,10 +12,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown } from "lucide-react";
-import OrderTable from "./data-table-view";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ChevronDown, Filter, Download } from "lucide-react";
+import FeedbackTable from "./feedback-table";
+import FeedbackDetail from "./feedback-detail";
 
-export default function DashboardPedidos() {
+export default function DashboardFeedback() {
   const [filter, setFilter] = useState("");
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,47 +31,24 @@ export default function DashboardPedidos() {
     pageSize: 10,
     totalItems: 0,
   });
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [selectedFeedback, setSelectedFeedback] = useState<any>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Substituir por chamada real à sua API
-        // const response = await fetch("http://localhost:3000/orders");
-        // const orders = await response.json();
+        const response = await fetch("http://localhost:3000/avaliacao");
+        const feedbacks = await response.json();
         
-        // Dados de exemplo
-        const orders = [
-          {
-            id: "728ed52f",
-            produto: "Quadro personalizado",
-            cliente: "João Silva",
-            valorTotal: 249.90,
-            frete: 25.90,
-            tipoFrete: "SEDEX",
-            status: "produção",
-            previsaoEntrega: "2023-11-15"
-          },
-          {
-            id: "489e1d42",
-            produto: "Pintura em tela",
-            cliente: "Maria Oliveira",
-            valorTotal: 450.00,
-            frete: 35.00,
-            tipoFrete: "PAC",
-            status: "novo",
-            previsaoEntrega: "2023-11-20"
-          },
-          // Adicione mais pedidos conforme necessário
-        ];
-        
-        setData(orders);
+        setData(feedbacks);
         setPagination(prev => ({
           ...prev,
-          totalItems: orders.length
+          totalItems: feedbacks.length
         }));
         setLoading(false);
       } catch (error) {
-        console.error("Erro ao buscar pedidos:", error);
+        console.error("Erro ao buscar feedbacks:", error);
         setLoading(false);
       }
     };
@@ -72,11 +56,16 @@ export default function DashboardPedidos() {
     fetchData();
   }, []);
 
+  const handleViewDetails = (feedback: any) => {
+    setSelectedFeedback(feedback);
+    setIsDetailOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="text-white p-4">
         <div className="flex justify-center items-center h-64">
-          <div className="text-purple-400">Carregando pedidos...</div>
+          <div className="text-purple-400">Carregando feedbacks...</div>
         </div>
       </div>
     );
@@ -93,15 +82,15 @@ export default function DashboardPedidos() {
     <div className="text-white p-4">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-2xl font-bold">Gestão de Pedidos</h3>
+          <h3 className="text-2xl font-bold">Painel de Feedback</h3>
           <p className="text-purple-300 mt-1">
-            Visualize e gerencie todos os pedidos do sistema
+            Visualize e gerencie todos os feedbacks recebidos
           </p>
         </div>
         
         <div className="flex space-x-3">
           <Input
-            placeholder="Filtrar pedidos..."
+            placeholder="Filtrar feedbacks..."
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             className="max-w-sm bg-[#1C2237] text-white border border-purple-600/30"
@@ -110,29 +99,48 @@ export default function DashboardPedidos() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button className="bg-[#1C2237] text-white border border-purple-600/30">
-                Ações <ChevronDown className="ml-2 h-4 w-4" />
+                <Filter className="mr-2 h-4 w-4" />
+                Filtros
+                <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-[#1C2237] text-white border border-purple-600/30">
-              <DropdownMenuLabel>Exportar dados</DropdownMenuLabel>
+              <DropdownMenuLabel>Filtrar por nota</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuCheckboxItem>CSV</DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem>Excel</DropdownMenuCheckboxItem>
-              <DropdownMenuCheckboxItem>PDF</DropdownMenuCheckboxItem>
+              {[1, 2, 3, 4, 5].map(nota => (
+                <DropdownMenuCheckboxItem
+                  key={nota}
+                  checked={statusFilter.includes(nota.toString())}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setStatusFilter([...statusFilter, nota.toString()]);
+                    } else {
+                      setStatusFilter(statusFilter.filter(item => item !== nota.toString()));
+                    }
+                  }}
+                >
+                  {["Ruim", "Regular", "Bom", "Muito Bom", "Ótimo"][nota - 1]}
+                </DropdownMenuCheckboxItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
           
           <Button className="bg-purple-600 hover:bg-purple-700">
-            Novo Pedido
+            <Download className="mr-2 h-4 w-4" />
+            Exportar
           </Button>
         </div>
       </div>
       
-      <OrderTable data={data} />
+      <FeedbackTable 
+        data={data} 
+        filter={filter} 
+        onViewDetails={handleViewDetails}
+      />
       
       <div className="mt-6 flex items-center justify-between">
         <div className="text-sm text-purple-300">
-          Mostrando {startItem} a {endItem} de {pagination.totalItems} pedidos
+          Mostrando {startItem} a {endItem} de {pagination.totalItems} feedbacks
         </div>
         <div className="flex space-x-2">
           <Button 
@@ -159,6 +167,22 @@ export default function DashboardPedidos() {
           </Button>
         </div>
       </div>
+
+      {/* Dialog de Detalhes */}
+      <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+        <DialogContent className="bg-[#1C2237] text-white border border-purple-600/30 max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold p-4">Detalhes do Feedback</DialogTitle>
+          </DialogHeader>
+          
+          {selectedFeedback && (
+            <FeedbackDetail 
+              feedback={selectedFeedback} 
+              onClose={() => setIsDetailOpen(false)} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

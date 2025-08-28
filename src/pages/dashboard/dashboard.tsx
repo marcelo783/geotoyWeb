@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CalendarDateRangePicker } from "@/components/ui/date-range-picker";
 import { Button } from "@/components/ui/button";
-import { Overview } from "@/components/dashboard/overview";
-import { RecentSales } from "@/components/dashboard/recent-sales";
+import { Overview } from "@/components/dashboard/overview/overview";
+import { RecentSales } from "@/components/dashboard/overview/recent-sales";
 
 import { PackageSearch, Truck, ShoppingCart, Loader } from "lucide-react";
 
@@ -24,9 +24,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import DashboardPintores from "@/components/dashboard/DashboardPintores";
-import DashboardPedidos from "@/components/dashboard/DashboardPedidos";
-import DashboardFeedback from "@/components/dashboard/DashboardFeedback";
+import DashboardPintores from "@/components/dashboard/pintores/DashboardPintores";
+import DashboardPedidos from "@/components/dashboard/pedidos/DashboardPedidos";
+import DashboardFeedback from "@/components/dashboard/feedback/DashboardFeedback";
 
 export type SimpleOrder = {
   id: string;

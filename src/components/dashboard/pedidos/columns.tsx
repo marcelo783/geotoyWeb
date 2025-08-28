@@ -1,5 +1,5 @@
-
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+// components/dashboard/orders/columns.tsx
+import { ArrowUpDown, MoreHorizontal, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,22 +12,26 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import type { ColumnDef } from "@tanstack/react-table";
 
-// Definindo o tipo Order baseado na sua entidade
 export type Order = {
   id: string;
   produto: string;
   cliente: string;
-  email?: string | null;
-  telefone?: string | null;
-  endereco?: string | null;
+  email?: string;
+  telefone?: string;
+  endereco?: string;
+  valorUnitario: number;
   valorTotal: number;
   frete: number;
-  tipoFrete?: string | null;
+  tipoFrete?: string;
   status: string;
-  previsaoEntrega?: Date | null;
+  previsaoEntrega?: Date;
+  pintor?: string;
+  imagem?: string;
+  imagens?: string[];
+  observacao?: string[];
 };
 
-export const columns: ColumnDef<Order>[] = [
+export const getColumns = (onViewDetails: (order: any) => void): ColumnDef<Order>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -50,11 +54,6 @@ export const columns: ColumnDef<Order>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "id",
-    header: "ID",
-    cell: ({ row }) => <div className="font-medium">{row.getValue("id")}</div>,
-  },
-  {
     accessorKey: "cliente",
     header: ({ column }) => {
       return (
@@ -68,7 +67,7 @@ export const columns: ColumnDef<Order>[] = [
         </Button>
       );
     },
-    cell: ({ row }) => <div>{row.getValue("cliente")}</div>,
+    cell: ({ row }) => <div className="font-medium">{row.getValue("cliente")}</div>,
   },
   {
     accessorKey: "produto",
@@ -100,11 +99,21 @@ export const columns: ColumnDef<Order>[] = [
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => (
-      <div className="capitalize px-3 py-1 rounded-full bg-purple-900/30 inline-block">
-        {row.getValue("status")}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const status = row.getValue("status") as string;
+      let bgColor = "bg-purple-900/30";
+      
+      if (status === "novo") bgColor = "bg-blue-500/30";
+      else if (status === "producao") bgColor = "bg-yellow-500/30";
+      else if (status === "finalizado") bgColor = "bg-green-500/30";
+      else if (status === "enviado") bgColor = "bg-indigo-500/30";
+      
+      return (
+        <div className={`capitalize px-3 py-1 rounded-full ${bgColor} inline-block`}>
+          {status}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "previsaoEntrega",
@@ -112,6 +121,27 @@ export const columns: ColumnDef<Order>[] = [
     cell: ({ row }) => {
       const date = row.getValue("previsaoEntrega") as Date | null | undefined;
       return date ? new Date(date).toLocaleDateString("pt-BR") : "N/A";
+    },
+  },
+  {
+    accessorKey: "tipoFrete",
+    header: "Tipo de Frete",
+    cell: ({ row }) => {
+      const tipo = row.getValue("tipoFrete") as string;
+      return <div className="uppercase">{tipo || "N/A"}</div>;
+    },
+  },
+  {
+    accessorKey: "frete",
+    header: () => <div className="text-right">Valor Frete</div>,
+    cell: ({ row }) => {
+      const frete = parseFloat(row.getValue("frete"));
+      const formatted = new Intl.NumberFormat("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+      }).format(frete);
+
+      return <div className="text-right font-medium">{formatted}</div>;
     },
   },
   {
@@ -133,10 +163,13 @@ export const columns: ColumnDef<Order>[] = [
             <DropdownMenuItem
               onClick={() => navigator.clipboard.writeText(order.id)}
             >
-              Copiar ID do pedido
+              Copiar ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onViewDetails(order)}>
+              <Eye className="mr-2 h-4 w-4" />
+              Ver detalhes
+            </DropdownMenuItem>
             <DropdownMenuItem>Editar status</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
