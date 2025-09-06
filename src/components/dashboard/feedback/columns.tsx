@@ -135,7 +135,7 @@ export const getColumns = (onViewDetails: (feedback: any) => void): ColumnDef<Fe
   },
   {
     accessorKey: "createdAt",
-    header: "Data",
+    header: "Data do Feedback",
     cell: ({ row }) => {
       const date = new Date(row.getValue("createdAt"));
       return <div>{date.toLocaleDateString("pt-BR")}</div>;

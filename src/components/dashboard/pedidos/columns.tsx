@@ -25,6 +25,7 @@ export type Order = {
   tipoFrete?: string;
   status: string;
   previsaoEntrega?: Date;
+  createdAt?: Date;
   pintor?: string;
   imagem?: string;
   imagens?: string[];
@@ -116,21 +117,41 @@ export const getColumns = (onViewDetails: (order: any) => void): ColumnDef<Order
     },
   },
   {
-    accessorKey: "previsaoEntrega",
-    header: "Previsão Entrega",
-    cell: ({ row }) => {
-      const date = row.getValue("previsaoEntrega") as Date | null | undefined;
-      return date ? new Date(date).toLocaleDateString("pt-BR") : "N/A";
-    },
+  accessorKey: "createdAt",
+  header: "Data do Pedido",
+  cell: ({ row }) => {
+    const date = row.getValue("createdAt") as Date | string | null | undefined;
+    if (!date) return "N/A";
+
+    // Formatar para DD/MM/YYYY HH:mm
+    const formatted = new Date(date).toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    return <div>{formatted}</div>;
   },
-  {
-    accessorKey: "tipoFrete",
-    header: "Tipo de Frete",
-    cell: ({ row }) => {
-      const tipo = row.getValue("tipoFrete") as string;
-      return <div className="uppercase">{tipo || "N/A"}</div>;
-    },
-  },
+},
+
+  // {
+  //   accessorKey: "previsaoEntrega",
+  //   header: "Previsão Entrega",
+  //   cell: ({ row }) => {
+  //     const date = row.getValue("previsaoEntrega") as Date | null | undefined;
+  //     return date ? new Date(date).toLocaleDateString("pt-BR") : "N/A";
+  //   },
+  // },
+  // {
+  //   accessorKey: "tipoFrete",
+  //   header: "Tipo de Frete",
+  //   cell: ({ row }) => {
+  //     const tipo = row.getValue("tipoFrete") as string;
+  //     return <div className="uppercase">{tipo || "N/A"}</div>;
+  //   },
+  // },
   {
     accessorKey: "frete",
     header: () => <div className="text-right">Valor Frete</div>,

@@ -1,12 +1,6 @@
 // src/components/dashboard/recent-sales.tsx
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  formatDistanceToNowStrict,
-  parseISO,
-  isAfter,
-  subDays,
-  isValid,
-} from "date-fns";
+import { parseISO, isValid, isAfter, subDays } from "date-fns";
 
 export type SimpleOrder = {
   id: string;
@@ -21,22 +15,18 @@ export type SimpleOrder = {
 
 type RecentSalesProps = {
   orders: SimpleOrder[];
-  dias: number;
 };
 
-export function RecentSales({ orders, dias }: RecentSalesProps) {
-  const now = new Date();
-  const cutoff = subDays(now, dias);
-
+export function RecentSales({ orders }: RecentSalesProps) {
+  // Ordenar por data de criação (mais recente primeiro)
   const recent = orders
     .map((order) => {
       const parsed = order.createdAt ? parseISO(order.createdAt) : null;
       return parsed && isValid(parsed) ? { ...order, date: parsed } : null;
     })
-    .filter(
-      (o): o is SimpleOrder & { date: Date } => !!o && isAfter(o.date, cutoff)
-    )
-    .sort((a, b) => b.date.getTime() - a.date.getTime());
+    .filter((o): o is SimpleOrder & { date: Date } => !!o)
+    .sort((a, b) => b.date.getTime() - a.date.getTime())
+    .slice(0, 5); // Mostrar apenas os 5 mais recentes
 
   return (
     <div className="space-y-6">
@@ -54,9 +44,9 @@ export function RecentSales({ orders, dias }: RecentSalesProps) {
           </Avatar>
           <div className="ml-4 space-y-1">
             <p className="text-sm font-medium text-white">{sale.cliente}</p>
-            <p className="text-sm text-purple-300">
+            {/* <p className="text-sm text-purple-300">
               {sale.email || "sem email"}
-            </p>
+            </p> */}
           </div>
           <div className="ml-auto font-medium text-green-400">
             {sale.valorUnitario?.toLocaleString("pt-BR", {
@@ -68,7 +58,7 @@ export function RecentSales({ orders, dias }: RecentSalesProps) {
       ))}
       {recent.length === 0 && (
         <p className="text-sm text-center text-purple-300">
-          Nenhuma venda nos últimos {dias} dias.
+          Nenhuma venda no período selecionado.
         </p>
       )}
     </div>

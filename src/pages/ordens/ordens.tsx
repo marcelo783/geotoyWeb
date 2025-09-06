@@ -25,6 +25,7 @@ type Order = {
   imagens?: string[];
   previsaoEntrega?: string;
   status: "novo" | "producao" | "finalizado" | "enviado" | "feedback"; // 🆕 adiciona feedback
+  urgente: boolean;
 };
 
 // Função para obter as classes de cor baseadas no status
@@ -69,6 +70,50 @@ const getStatusColor = (status: Order["status"]) => {
   }
 };
 
+// Função para calcular dias restantes
+const calcularDiasRestantes = (
+  dataPrevisao: string | undefined
+): number | null => {
+  if (!dataPrevisao) return null;
+
+  const hoje = new Date();
+  const dataEntrega = new Date(dataPrevisao);
+  const diffTime = dataEntrega.getTime() - hoje.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  return diffDays;
+};
+
+const getDisplayInfo = (ordem: Order) => {
+  // Se o status for "enviado" ou "feedback", não mostra o contador de dias restantes
+  if (ordem.status === "enviado" || ordem.status === "feedback") {
+    return { showCounter: false, message: "Entregue", color: "text-green-400" };
+  }
+  const diasRestantes = calcularDiasRestantes(ordem.previsaoEntrega);
+  if (diasRestantes === null) {
+    return { showCounter: false, message: null, color: null };
+  }
+  if (diasRestantes > 0) {
+    return {
+      showCounter: true,
+      message: `${diasRestantes} dias restantes`,
+      color: ordem.urgente
+        ? "text-red-400"
+        : diasRestantes <= 3
+        ? "text-red-400"
+        : diasRestantes <= 7
+        ? "text-yellow-400"
+        : "text-green-400",
+    };
+  } else {
+    return {
+      showCounter: true,
+      message: "ENTREGA ATRASADA!",
+      color: "text-red-400",
+    };
+  }
+};
+
 const statusColumns: Record<
   string,
   { title: string; icon: JSX.Element; color: string }
@@ -93,7 +138,8 @@ const statusColumns: Record<
     icon: <Send className="w-4 h-4 text-purple-500" />,
     color: "bg-purple-500/10 border border-purple-300",
   },
-  feedback: { // 🆕 nova coluna feedback
+  feedback: {
+    // 🆕 nova coluna feedback
     title: "Feedback",
     icon: <MessageCircle className="w-4 h-4 text-pink-500" />,
     color: "bg-pink-500/10 border border-pink-300",
@@ -130,79 +176,84 @@ export default function OrdensPage() {
     setShowDialog(true);
   };
 
- const handleConfirmacao = async (data: {
-  mensagem: string;
-  arquivos?: File[];
-  codigoRastreio?: string;
-}) => {
-  if (!ordemMovida || !statusDestino) return;
+  const handleConfirmacao = async (data: {
+    mensagem: string;
+    arquivos?: File[];
+    codigoRastreio?: string;
+  }) => {
+    if (!ordemMovida || !statusDestino) return;
 
-  const formData = new FormData();
-  formData.append("mensagem", data.mensagem);
-  formData.append("status", statusDestino);
-  formData.append("email", ordemMovida.email || "");
+    const formData = new FormData();
+    formData.append("mensagem", data.mensagem);
+    formData.append("status", statusDestino);
+    formData.append("email", ordemMovida.email || "");
 
-  if (data.codigoRastreio) {
-    formData.append("codigoRastreamento", data.codigoRastreio);
-  }
-
-  data.arquivos?.forEach((file) => {
-    formData.append("arquivos", file);
-  });
-
-  try {
-    // 1) Sempre dispara e-mail
-    await axios.post(
-      `http://localhost:3000/orders/${ordemMovida.id}/enviar-email`,
-      formData,
-      { withCredentials: true }
-    );
-
-    // 2) Se for enviado → usa o PATCH especial
-    if (statusDestino === "enviado") {
-      await axios.patch(
-        `http://localhost:3000/orders/${ordemMovida.id}/enviar`,
-        { codigoRastreamento: data.codigoRastreio },
-        { withCredentials: true }
-      );
-    } else {
-      // Caso contrário → patch genérico
-      await axios.patch(
-        `http://localhost:3000/orders/${ordemMovida.id}`,
-        { status: statusDestino },
-        { withCredentials: true }
-      );
+    if (data.codigoRastreio) {
+      formData.append("codigoRastreamento", data.codigoRastreio);
     }
 
-    // 3) Atualiza estado local
-    setOrdens((prev) =>
-      prev.map((o) =>
-        o.id === ordemMovida.id ? { ...o, status: statusDestino } : o
-      )
-    );
+    data.arquivos?.forEach((file) => {
+      formData.append("arquivos", file);
+    });
 
-    toast.success(
-      `Pedido #${ordemMovida.id.slice(-6)} movido para "${statusDestino}" com sucesso!`,
-      {
-        icon: "🚀",
-        duration: 5000,
+    try {
+      // 1) Sempre dispara e-mail
+      await axios.post(
+        `http://localhost:3000/orders/${ordemMovida.id}/enviar-email`,
+        formData,
+        { withCredentials: true }
+      );
+
+      // 2) Se for enviado → usa o PATCH especial
+      if (statusDestino === "enviado") {
+        await axios.patch(
+          `http://localhost:3000/orders/${ordemMovida.id}/enviar`,
+          { codigoRastreamento: data.codigoRastreio },
+          { withCredentials: true }
+        );
+      } else {
+        // Caso contrário → patch genérico
+        await axios.patch(
+          `http://localhost:3000/orders/${ordemMovida.id}`,
+          { status: statusDestino },
+          { withCredentials: true }
+        );
       }
-    );
 
-    setShowDialog(false);
-    setOrdemMovida(null);
-    setStatusDestino(null);
-  } catch (err: any) {
-    console.error(err.response?.data || err);
-    toast.error("Erro ao enviar dados");
-  }
-};
+      // 3) Atualiza estado local
+      setOrdens((prev) =>
+        prev.map((o) =>
+          o.id === ordemMovida.id ? { ...o, status: statusDestino } : o
+        )
+      );
 
+      toast.success(
+        `Pedido #${ordemMovida.id.slice(
+          -6
+        )} movido para "${statusDestino}" com sucesso!`,
+        {
+          icon: "🚀",
+          duration: 5000,
+        }
+      );
+
+      setShowDialog(false);
+      setOrdemMovida(null);
+      setStatusDestino(null);
+    } catch (err: any) {
+      console.error(err.response?.data || err);
+      toast.error("Erro ao enviar dados");
+    }
+  };
 
   return (
-    <div className="p-4  overflow-x-auto"> {/* 🆕 adiciona scroll horizontal */}
+    <div className="p-4  overflow-x-auto">
+      {" "}
+      {/* 🆕 adiciona scroll horizontal */}
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="flex gap-4 min-w-[1200px]"> {/* 🆕 flex horizontal em vez de grid */}
+        <div className="flex gap-4 min-w-[1200px]">
+          {" "}
+          {/* 🆕 flex horizontal em vez de grid */}
           {Object.entries(statusColumns).map(
             ([statusKey, { title, icon, color }]) => {
               const ordensDaColuna = ordens.filter(
@@ -251,11 +302,112 @@ export default function OrdensPage() {
                                     >
                                       <CardContent className="p-4 space-y-3">
                                         <div className="text-sm">
-                                          <span
-                                            className={`block text-xs ${statusColor.text}`}
-                                          >
-                                            #{ordem.id.slice(-6)}
-                                          </span>
+                                          {/* {ordem.urgente &&
+                                            ordem.status !== "enviado" &&
+                                            ordem.status !== "feedback" && (
+                                              <div className="flex items-center gap-1 mb-1 bg-red-500/30 border border-red-400/70 rounded-full px-3 py-1 w-fit animate-pulse">
+                                                <svg
+                                                  className="w-4 h-4 text-red-100 flex-shrink-0"
+                                                  fill="currentColor"
+                                                  viewBox="0 0 20 20"
+                                                >
+                                                  <path
+                                                    fillRule="evenodd"
+                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
+                                                    clipRule="evenodd"
+                                                  />
+                                                </svg>
+                                                <span className="text-red-100 text-xs font-bold tracking-wide">
+                                                  URGÊNCIA
+                                                </span>
+                                              </div>
+                                            )} */}
+
+                                          {/* Contador de dias - só mostra se não for enviado/feedback */}
+                                          {ordem.previsaoEntrega &&
+                                            ordem.status !== "enviado" &&
+                                            ordem.status !== "feedback" && (
+                                              <div
+                                                className={`flex items-center gap-1 ${
+                                                  ordem.urgente
+                                                    ? "bg-red-500/20 px-2 py-1 rounded-lg border border-red-400/50"
+                                                    : ""
+                                                }`}
+                                              >
+                                                <svg
+                                                  className={`w-3 h-3 flex-shrink-0 ${
+                                                    ordem.urgente
+                                                      ? "text-red-300"
+                                                      : calcularDiasRestantes(
+                                                          ordem.previsaoEntrega
+                                                        ) <= 3
+                                                      ? "text-red-400"
+                                                      : calcularDiasRestantes(
+                                                          ordem.previsaoEntrega
+                                                        ) <= 7
+                                                      ? "text-yellow-400"
+                                                      : "text-green-400"
+                                                  }`}
+                                                  fill="currentColor"
+                                                  viewBox="0 0 20 20"
+                                                >
+                                                  <path
+                                                    fillRule="evenodd"
+                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z"
+                                                    clipRule="evenodd"
+                                                  />
+                                                </svg>
+
+                                                <span
+                                                  className={`text-xs font-semibold ${
+                                                    ordem.urgente
+                                                      ? "text-red-300"
+                                                      : calcularDiasRestantes(
+                                                          ordem.previsaoEntrega
+                                                        ) <= 3
+                                                      ? "text-red-400"
+                                                      : calcularDiasRestantes(
+                                                          ordem.previsaoEntrega
+                                                        ) <= 7
+                                                      ? "text-yellow-400"
+                                                      : "text-green-400"
+                                                  }`}
+                                                >
+                                                  {ordem.urgente
+                                                    ? "URGÊNCIA - "
+                                                    : ""}
+                                                  {calcularDiasRestantes(
+                                                    ordem.previsaoEntrega
+                                                  ) > 0
+                                                    ? `${calcularDiasRestantes(
+                                                        ordem.previsaoEntrega
+                                                      )} DIAS RESTANTE!`
+                                                    : "ENTREGA ATRASADA!"}
+                                                </span>
+                                              </div>
+                                            )}
+
+                                          {/* Status de entregue para pedidos enviados ou com feedback */}
+                                          {(ordem.status === "enviado" ||
+                                            ordem.status === "feedback") && (
+                                            <div className="flex items-center gap-1 text-green-400">
+                                              <svg
+                                                className="w-3 h-3 flex-shrink-0"
+                                                fill="currentColor"
+                                                viewBox="0 0 20 20"
+                                              >
+                                                <path
+                                                  fillRule="evenodd"
+                                                  d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                                                  clipRule="evenodd"
+                                                />
+                                              </svg>
+                                              <span className="text-xs font-semibold">
+                                                ENTREGUE
+                                              </span>
+                                            </div>
+                                          )}
+
                                           <span className="font-medium text-white truncate block">
                                             {ordem.cliente}
                                           </span>
@@ -311,7 +463,6 @@ export default function OrdensPage() {
           )}
         </div>
       </DragDropContext>
-
       {showDialog && ordemMovida && statusDestino && (
         <ConfirmarEnvioDialog
           ordemId={ordemMovida.id}

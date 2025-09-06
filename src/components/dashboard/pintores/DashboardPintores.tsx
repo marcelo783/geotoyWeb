@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useDateFilter } from "../DateFilter/DateFilterContext";
 
 interface PintorCount {
   pintor: string;
@@ -8,13 +9,22 @@ interface PintorCount {
 }
 
 export default function DashboardPintores() {
+  const { dateRange } = useDateFilter();
   const [pintores, setPintores] = useState<PintorCount[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchCount() {
       try {
-        const res = await fetch("http://localhost:3000/orders/count-all-pintores");
+        const params = new URLSearchParams();
+        if (dateRange.startDate) {
+          params.append("startDate", dateRange.startDate.toISOString());
+        }
+        if (dateRange.endDate) {
+          params.append("endDate", dateRange.endDate.toISOString());
+        }
+
+        const res = await fetch(`http://localhost:3000/orders/count-all-pintores?${params.toString()}`);
         if (!res.ok) throw new Error("Erro ao buscar contador");
         const data: PintorCount[] = await res.json();
         setPintores(data);
@@ -26,7 +36,7 @@ export default function DashboardPintores() {
     }
 
     fetchCount();
-  }, []);
+  }, [dateRange])
 
   // Calcular estatísticas
   const totalPintores = pintores.length;
@@ -90,7 +100,7 @@ export default function DashboardPintores() {
           </div>
           
           <div className="bg-[#11172D] rounded-2xl shadow-lg p-6  transition-all hover:shadow-xl">
-            <div className="text-purple-400 text-sm font-medium mb-2">Total de Obras</div>
+            <div className="text-purple-400 text-sm font-medium mb-2">Total de Pedidos</div>
             <div className="text-3xl font-bold text-gray-100">{totalObras}</div>
           </div>
           
@@ -135,9 +145,9 @@ export default function DashboardPintores() {
                     
                     <div className="mt-8 flex justify-between items-end">
                       <div>
-                        <p className="text-sm opacity-80">Obras criadas</p>
-                        <p className="text-4xl font-bold mt-1">{total}</p>
-                      </div>
+                        <p className="text-2xl opacity-80">Pintados</p>
+
+                      </div> 
                       
                       <div className="relative">
                         <div className="bg-white bg-opacity-30 rounded-full p-3">

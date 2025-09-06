@@ -14,7 +14,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 import axios from "axios";
 
-import { Dialog as PreviewDialog, DialogContent as PreviewDialogContent } from "@/components/ui/dialog";
+import {
+  Dialog as PreviewDialog,
+  DialogContent as PreviewDialogContent,
+} from "@/components/ui/dialog";
 import {
   ImagePlus,
   StickyNote,
@@ -27,6 +30,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Checkbox } from "./ui/checkbox";
 
 export function CriarPedidoDialog() {
   const [open, setOpen] = useState(false);
@@ -39,6 +43,7 @@ export function CriarPedidoDialog() {
   const [form, setForm] = useState<any>({
     imagens: [],
     imagemPreviaUrls: [],
+    urgente: false,
   });
 
   const handleArquivo = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,6 +130,7 @@ export function CriarPedidoDialog() {
         "tipoFrete",
         "valorUnitario",
         "valorTotal",
+        "urgente",
       ].forEach((key) => formData.append(key, String(form[key])));
 
       form.observacaoTexto
@@ -249,6 +255,19 @@ export function CriarPedidoDialog() {
                       />
                     </div>
 
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="urgente"
+                        checked={form.urgente}
+                        onCheckedChange={(checked) =>
+                          setForm({ ...form, urgente: checked })
+                        }
+                      />
+                      <Label htmlFor="urgente" className="text-sm font-medium">
+                        Marcar como urgente
+                      </Label>
+                    </div>
+
                     <div className="flex justify-end gap-2 mt-4">
                       <Button variant="ghost" onClick={() => setOpen(false)}>
                         <X className="w-4 h-4 mr-1" />
@@ -266,64 +285,67 @@ export function CriarPedidoDialog() {
 
           {/* Lado direito: imagens */}
           {dados && (
-          <div className="w-80 pt-4 flex flex-col gap-4 border-l pl-4">
-            <div>
-              <Label className="flex items-center gap-2">
-                <ImagePlus className="w-4 h-4" />
-                Anexar imagens do produto
-              </Label>
-              <Input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageChange}
-              />
-            </div>
-
-            {form.imagemPreviaUrls?.length > 0 && (
-              <div className="flex flex-wrap gap-4 pt-2">
-                {form.imagemPreviaUrls.map((src: string, index: number) => (
-                  <Tooltip key={index}>
-                    <TooltipTrigger asChild>
-                      <div className="relative group cursor-pointer">
-                        <img
-                          src={src}
-                          alt={`preview-${index}`}
-                          className="w-28 h-28 object-cover border rounded hover:ring-2 hover:ring-primary"
-                          onClick={() => setImagemZoom(src)}
-                        />
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="absolute top-0 right-0 text-red-500"
-                          onClick={() => handleImageDelete(index)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Clique para visualizar</p>
-                    </TooltipContent>
-                  </Tooltip>
-                ))}
+            <div className="w-80 pt-4 flex flex-col gap-4 border-l pl-4">
+              <div>
+                <Label className="flex items-center gap-2">
+                  <ImagePlus className="w-4 h-4" />
+                  Anexar imagens do produto
+                </Label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageChange}
+                />
               </div>
-            )}
-          </div>
+
+              {form.imagemPreviaUrls?.length > 0 && (
+                <div className="flex flex-wrap gap-4 pt-2">
+                  {form.imagemPreviaUrls.map((src: string, index: number) => (
+                    <Tooltip key={index}>
+                      <TooltipTrigger asChild>
+                        <div className="relative group cursor-pointer">
+                          <img
+                            src={src}
+                            alt={`preview-${index}`}
+                            className="w-28 h-28 object-cover border rounded hover:ring-2 hover:ring-primary"
+                            onClick={() => setImagemZoom(src)}
+                          />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="absolute top-0 right-0 text-red-500"
+                            onClick={() => handleImageDelete(index)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Clique para visualizar</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
-        
 
         {/* Dialog para visualizar imagem em zoom */}
         {/* Dialog de Zoom da imagem */}
         {imagemZoom && (
           <PreviewDialog open onOpenChange={() => setImagemZoom(null)}>
             <PreviewDialogContent className="max-w-3xl flex items-center justify-center">
-              <img src={imagemZoom} alt="Zoom" className="max-h-[75vh] object-contain" />
+              <img
+                src={imagemZoom}
+                alt="Zoom"
+                className="max-h-[75vh] object-contain"
+              />
             </PreviewDialogContent>
           </PreviewDialog>
         )}
       </DialogContent>
     </Dialog>
-  );       
+  );
 }

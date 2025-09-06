@@ -1,7 +1,7 @@
 // components/dashboard/feedback/dashboard-feedback.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +21,8 @@ import {
 import { ChevronDown, Filter, Download } from "lucide-react";
 import FeedbackTable from "./feedback-table";
 import FeedbackDetail from "./feedback-detail";
+import { useDateFilter } from "../DateFilter/DateFilterContext";
+import axios from "axios";
 
 export default function DashboardFeedback() {
   const [filter, setFilter] = useState("");
@@ -34,32 +36,97 @@ export default function DashboardFeedback() {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [selectedFeedback, setSelectedFeedback] = useState<any>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [metrics, setMetrics] = useState<any>(null);
+  const { dateRange } = useDateFilter();
+
+  useEffect(() => {
+    console.log("DateRange no DashboardFeedback:", dateRange);
+  }, [dateRange]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("http://localhost:3000/avaliacao");
-        const feedbacks = await response.json();
+        setLoading(true);
         
-        setData(feedbacks);
+        // Construir parâmetros de query baseados no filtro de data
+        const params: any = {};
+        if (dateRange.startDate) {
+          params.startDate = dateRange.startDate.toISOString();
+        }
+        if (dateRange.endDate) {
+          // Ajustar para fim do dia
+          const endOfDay = new Date(dateRange.endDate);
+          endOfDay.setHours(23, 59, 59, 999);
+          params.endDate = endOfDay.toISOString();
+        }
+        
+        console.log("Enviando parâmetros para a API:", params);
+        
+        // Buscar feedbacks
+        const feedbackResponse = await axios.get("http://localhost:3000/avaliacao", {
+          params,
+          withCredentials: true
+        });
+        
+        console.log("Resposta da API:", {
+          quantidade: feedbackResponse.data.length,
+          primeirosItens: feedbackResponse.data.slice(0, 3)
+        });
+        
+        // Buscar métricas de feedback
+        const metricsResponse = await axios.get("http://localhost:3000/avaliacao/metrics", {
+          params,
+          withCredentials: true
+        });
+        
+        setData(feedbackResponse.data);
+        setMetrics(metricsResponse.data);
+        
+        // Atualizar a paginação com o número total de itens
         setPagination(prev => ({
           ...prev,
-          totalItems: feedbacks.length
+          totalItems: feedbackResponse.data.length
         }));
+        
         setLoading(false);
       } catch (error) {
         console.error("Erro ao buscar feedbacks:", error);
+        if (error.response) {
+          console.error("Resposta do erro:", error.response.data);
+        }
         setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [dateRange]);
 
-  const handleViewDetails = (feedback: any) => {
-    setSelectedFeedback(feedback);
-    setIsDetailOpen(true);
-  };
+  // Filtrar dados localmente com base no filtro de texto
+  const filteredData = useMemo(() => {
+    if (!filter) return data;
+    
+    const lowerFilter = filter.toLowerCase();
+    
+    return data.filter(feedback => {
+      const safeCompare = (value: any) => 
+        String(value || "").toLowerCase().includes(lowerFilter);
+      
+      return (
+        safeCompare(feedback.order?.cliente) ||
+        safeCompare(feedback.order?.produto) ||
+        safeCompare(feedback.comentario) ||
+        safeCompare(feedback.atendimento) ||
+        safeCompare(feedback.tempoEntrega) ||
+        safeCompare(feedback.qualidadeMaterial)
+      );
+    });
+  }, [data, filter]);
+
+  // Calcular dados paginados
+  const paginatedData = useMemo(() => {
+    const start = pagination.pageIndex * pagination.pageSize;
+    return filteredData.slice(start, start + pagination.pageSize);
+  }, [filteredData, pagination.pageIndex, pagination.pageSize]);
 
   if (loading) {
     return (
@@ -71,11 +138,16 @@ export default function DashboardFeedback() {
     );
   }
 
+  const handleViewDetails = (feedback: any) => {
+    setSelectedFeedback(feedback);
+    setIsDetailOpen(true);
+  };
+
   // Calcular itens sendo exibidos
   const startItem = pagination.pageIndex * pagination.pageSize + 1;
   const endItem = Math.min(
-    (pagination.pageIndex + 1) * pagination.pageSize,
-    pagination.totalItems
+    startItem + pagination.pageSize - 1,
+    filteredData.length
   );
 
   return (
@@ -133,14 +205,14 @@ export default function DashboardFeedback() {
       </div>
       
       <FeedbackTable 
-        data={data} 
+        data={paginatedData} 
         filter={filter} 
         onViewDetails={handleViewDetails}
       />
       
       <div className="mt-6 flex items-center justify-between">
         <div className="text-sm text-purple-300">
-          Mostrando {startItem} a {endItem} de {pagination.totalItems} feedbacks
+          Mostrando {startItem} a {endItem} de {filteredData.length} feedbacks
         </div>
         <div className="flex space-x-2">
           <Button 
@@ -157,7 +229,7 @@ export default function DashboardFeedback() {
           <Button 
             variant="outline" 
             className="bg-[#1C2237] text-white border border-purple-600/30"
-            disabled={endItem >= pagination.totalItems}
+            disabled={endItem >= filteredData.length}
             onClick={() => setPagination(prev => ({
               ...prev,
               pageIndex: prev.pageIndex + 1

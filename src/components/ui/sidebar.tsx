@@ -1,25 +1,37 @@
-import { LayoutDashboard, Menu, Package, Send, Settings, MessageCircleMore, ChevronRight, ChevronDown } from "lucide-react"
-import { useState } from "react"
-import logo from "../../../public/Camada 1.png"
+import {
+  LayoutDashboard,
+  Menu,
+  Package,
+  Send,
+  Settings,
+  MessageCircleMore,
+  ChevronRight,
+  ChevronDown,
+} from "lucide-react";
+import { useState } from "react";
+import logo from "../../../public/Camada 1.png";
+import { EmailConfigDialog } from "../email-remetente/email-config-dialog";
 
 const navItems = [
   { label: "Ordens", icon: Package, href: "/ordens" },
-  { label: "Enviados", icon: Send, href: "/enviados" },
-  { label: "Feedback", icon: MessageCircleMore, href: "/feedback" },
+  // { label: "Enviados", icon: Send, href: "/enviados" },
+  // { label: "Feedback", icon: MessageCircleMore, href: "/feedback" },
   { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-  { label: "Configuração", icon: Settings, href: "/configuracao", children: [
-      { label: "Email Remetente", href: "/configuracao/email" }
-    ]
+  {
+    label: "Configuração",
+    icon: Settings,
+    href: "/configuracao",
+    children: [{ label: "Email Remetente", href: "/configuracao/email" }],
   },
-]
+];
 
 export function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false)
-  const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({})
+  const [collapsed, setCollapsed] = useState(false);
+  const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({});
 
   const toggleMenu = (label: string) => {
-    setOpenMenus((prev) => ({ ...prev, [label]: !prev[label] }))
-  }
+    setOpenMenus((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
 
   return (
     <aside
@@ -56,7 +68,7 @@ export function Sidebar() {
       {/* Itens de navegação */}
       <nav className="flex-1 py-4 px-2 space-y-1 bg-gray-900">
         {navItems.map(({ label, icon: Icon, href, children }) => {
-          const isOpen = openMenus[label] || false
+          const isOpen = openMenus[label] || false;
 
           if (children) {
             return (
@@ -80,19 +92,24 @@ export function Sidebar() {
                 {/* Submenu */}
                 {isOpen && !collapsed && (
                   <div className="ml-8 mt-1 space-y-1">
-                    {children.map((child) => (
-                      <a
-                        key={child.href}
-                        href={child.href}
-                        className="block px-3 py-1 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-md"
-                      >
-                        {child.label}
-                      </a>
-                    ))}
+                    {children.map((child) => {
+                      if (child.label === "Email Remetente") {
+                        return <EmailConfigDialog key={child.label} />;
+                      }
+                      return (
+                        <a
+                          key={child.href}
+                          href={child.href}
+                          className="block px-3 py-1 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-md"
+                        >
+                          {child.label}
+                        </a>
+                      );
+                    })}
                   </div>
                 )}
               </div>
-            )
+            );
           }
 
           return (
@@ -104,9 +121,9 @@ export function Sidebar() {
               <Icon className="w-4 h-4" />
               {!collapsed && <span>{label}</span>}
             </a>
-          )
+          );
         })}
       </nav>
     </aside>
-  )
+  );
 }

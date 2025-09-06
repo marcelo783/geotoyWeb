@@ -21,6 +21,7 @@ import {
 import { ChevronDown, PlusCircle, Package, Clock, CheckCircle, Truck, AlertCircle } from "lucide-react";
 import OrderTable from "./data-table-view";
 import OrderDetail from "./order-detail";
+import { useDateFilter } from "../DateFilter/DateFilterContext";
 
 export default function DashboardPedidos() {
   const [filter, setFilter] = useState("");
@@ -41,11 +42,26 @@ export default function DashboardPedidos() {
     enviado: 0
   });
 
+    const { dateRange } = useDateFilter();
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setError(null);
-        const response = await fetch("http://localhost:3000/orders", {
+        
+        // Construir parâmetros de query baseados no filtro de data
+        const params: any = {};
+        if (dateRange.startDate) {
+          params.startDate = dateRange.startDate.toISOString();
+        }
+        if (dateRange.endDate) {
+          // Ajustar para fim do dia
+          const endOfDay = new Date(dateRange.endDate);
+          endOfDay.setHours(23, 59, 59, 999);
+          params.endDate = endOfDay.toISOString();
+        }
+        
+        const response = await fetch(`http://localhost:3000/orders?${new URLSearchParams(params)}`, {
           credentials: 'include' // Inclui cookies para autenticação
         });
         
@@ -94,7 +110,7 @@ export default function DashboardPedidos() {
     };
 
     fetchData();
-  }, []);
+  }, [dateRange]);
 
   const handleViewDetails = (order: any) => {
     setSelectedOrder(order);
