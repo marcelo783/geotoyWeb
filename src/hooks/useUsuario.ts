@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import type { Usuario } from "@/types/user";
- // ajuste caminho
 
-export function useUsuario(): { usuario: Usuario | null; fetchUsuario: () => Promise<void> } {
+export function useUsuario() {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const fetchUsuario = async () => {
     try {
@@ -14,6 +14,8 @@ export function useUsuario(): { usuario: Usuario | null; fetchUsuario: () => Pro
       setUsuario(res.data);
     } catch {
       setUsuario(null);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -21,5 +23,5 @@ export function useUsuario(): { usuario: Usuario | null; fetchUsuario: () => Pro
     fetchUsuario();
   }, []);
 
-  return { usuario, fetchUsuario };
+  return { usuario, fetchUsuario, loading };
 }

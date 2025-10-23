@@ -1,5 +1,5 @@
 // components/dashboard/orders/order-detail.tsx
-import { Calendar, User, Package, Mail, Phone, DollarSign, Truck, Palette, FileText, X } from "lucide-react";
+import { Calendar, User, Package, Mail, Phone, DollarSign, Truck, Palette,  X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import { useState } from "react";

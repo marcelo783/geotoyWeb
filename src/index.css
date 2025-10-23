@@ -1,6 +1,21 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+
+
+#nprogress .bar {
+  background: #ff0000 !important; /* vermelho estilo YouTube */
+  height: 3px !important;
+}
+
+#nprogress .peg {
+  box-shadow: 0 0 10px #ff0000, 0 0 5px #ff0000;
+}
+
+#nprogress .spinner {
+  display: none !important; /* remove o spinner */
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

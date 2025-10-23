@@ -24,7 +24,10 @@ export default function DashboardPintores() {
           params.append("endDate", dateRange.endDate.toISOString());
         }
 
-        const res = await fetch(`http://localhost:3000/orders/count-all-pintores?${params.toString()}`);
+        const res = await fetch(`http://localhost:3000/orders/count-all-pintores?${params.toString()}`,{
+ method: 'GET',
+ credentials: 'include',
+        });
         if (!res.ok) throw new Error("Erro ao buscar contador");
         const data: PintorCount[] = await res.json();
         setPintores(data);

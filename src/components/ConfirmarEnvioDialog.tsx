@@ -41,8 +41,6 @@ type Props = {
 export function ConfirmarEnvioDialog({
   emailCliente,
   statusDestino,
-  cliente,
-  produto,
   onConfirmado,
   onCancelado,
 }: Props) {
@@ -53,34 +51,47 @@ export function ConfirmarEnvioDialog({
   const [arquivosImagens, setArquivosImagens] = useState<File[]>([]);
   const [arquivosPDF, setArquivosPDF] = useState<File[]>([]);
   const [codigoRastreio, setCodigoRastreio] = useState("");
-  const [imagemZoom, setImagemZoom] = useState<string | null>(null);
+ const [, setImagemZoom] = useState<string | null>(null);
+
+
+    const [mostrarLoading, setMostrarLoading] = useState(false);
 
 useEffect(() => {
   setLoadingMensagem(true);
   axios
-    .get(`http://localhost:3000/orders/mensagens/${statusDestino}`)
+    .get(`http://localhost:3000/orders/mensagens/${statusDestino}`,{
+       withCredentials: true,
+    })
+     
     .then((res) => {
       setMensagem(res.data.mensagem); // backend retorna { assunto, mensagem, gifUrl }
     })
+    
     .catch((err) => {
       console.error("Erro ao buscar mensagem:", err);
       setMensagem(""); // fallback vazio
     })
     .finally(() => setLoadingMensagem(false));
+    
 }, [statusDestino]);
 
 
   const handleSubmit = () => {
+    setMostrarLoading(true);
     onConfirmado({
       mensagem,
       arquivos: [...arquivosImagens, ...arquivosPDF],
       codigoRastreio,
+      
     });
   };
 
   
 
   return (
+
+    <>
+
     <Dialog open onOpenChange={onCancelado}>
       <DialogContent className="max-w-lg p-6">
         <DialogHeader>
@@ -237,5 +248,18 @@ useEffect(() => {
         </div>
       </DialogContent>
     </Dialog>
+
+    {mostrarLoading && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100]">
+          <div className="flex flex-col items-center">
+            <div className="animate-spin rounded-full h-20 w-20 border-4 border-t-yellow-400 border-blue-200 mb-6"></div>
+            <p className="text-white text-xl font-bold text-center">
+              Por favor, aguarde enquanto processamos seu pedido.
+            </p>
+          </div>
+        </div>
+      )}
+
+    </>
   );
 }

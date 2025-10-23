@@ -58,7 +58,8 @@ export function VerDetalhesDialog({ ordem }: Props) {
   });
 
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(true);
+const [, setOpen] = useState(true);
+
 
   const [imagemZoom, setImagemZoom] = useState<string | null>(null);
 
@@ -115,7 +116,9 @@ const handleUpdate = async () => {
 
       console.log("PATCH payload →", payload);
 
-      await axios.patch(`http://localhost:3000/orders/${ordem.id}`, payload);
+      await axios.patch(`http://localhost:3000/orders/${ordem.id}`, payload, {
+         withCredentials: true,
+      } ) ;
       toast.success("Ordem atualizada com sucesso");
     } catch (err) {
       toast.error("Erro ao atualizar a ordem");
@@ -325,7 +328,7 @@ const handleUpdate = async () => {
             {/* Observações + botões lado a lado */}
             <div className="md:col-span-1 flex items-end justify-between pt-6 gap-2">
               {/* ALERT DIALOG DE CONFIRMAÇÃO */}
-              <AlertDialog>
+              <AlertDialog >
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive">Apagar Ordem</Button>
                 </AlertDialogTrigger>
@@ -345,7 +348,9 @@ const handleUpdate = async () => {
                       onClick={async () => {
                         try {
                           await axios.delete(
-                            `http://localhost:3000/orders/${ordem.id}`
+                            `http://localhost:3000/orders/${ordem.id}`,{
+                             withCredentials: true,
+                            }
                           );
                           toast.success("Ordem apagada com sucesso");
                           setOpen(false); // fecha o Dialog principal

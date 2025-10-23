@@ -39,6 +39,7 @@ export function CriarPedidoDialog() {
   const [enviando, setEnviando] = useState(false);
   const [dados, setDados] = useState<any>(null);
   const [imagemZoom, setImagemZoom] = useState<string | null>(null);
+  const [mostrarLoading, setMostrarLoading] = useState(false);
 
   const [form, setForm] = useState<any>({
     imagens: [],
@@ -59,13 +60,18 @@ export function CriarPedidoDialog() {
 
     try {
       const res = await axios.post(
-        "http://localhost:3000/orders/upload",
-        formData
+        "http://localhost:3000/orders/pdf",
+        formData,
+        {
+    withCredentials: true,
+    headers: { "Content-Type": "multipart/form-data" },
+  }
       );
       setDados(res.data);
       setForm((prev: any) => ({
         ...prev,
         ...res.data,
+         produto: res.data.descricao || "",
         observacaoTexto: res.data.observacao?.join("\n") || "",
       }));
       toast.success("Dados extraídos com sucesso!");
@@ -106,17 +112,18 @@ export function CriarPedidoDialog() {
   };
 
   const handleImageDelete = (index: number) => {
-    setForm((prev: any) => ({
-      ...prev,
-      imagens: prev.imagens.filter((_, i) => i !== index),
-      imagemPreviaUrls: prev.imagemPreviaUrls.filter((_, i) => i !== index),
-    }));
-  };
+  setForm((prev: any) => ({
+    ...prev,
+    imagens: prev.imagens.filter((_: string, i: number) => i !== index),
+    imagemPreviaUrls: prev.imagemPreviaUrls.filter((_: string, i: number) => i !== index),
+  }));
+};
+
 
   const criarPedido = async () => {
     if (enviando) return;
     setEnviando(true);
-
+    setMostrarLoading(true);
     try {
       const formData = new FormData();
       [
@@ -125,14 +132,39 @@ export function CriarPedidoDialog() {
         "telefone",
         "endereco",
         "produto",
-        "previsaoEntrega",
         "frete",
         "tipoFrete",
         "valorUnitario",
         "valorTotal",
         "urgente",
-      ].forEach((key) => formData.append(key, String(form[key])));
+      ].forEach((key) => {
+  if (form[key] !== undefined && form[key] !== null)
+    formData.append(key, String(form[key]));
+});
 
+if (form.nome) {
+  formData.append("cliente", form.nome);
+}
+
+
+    if (form.descricao) {
+      formData.append("produto", form.descricao);
+    }
+
+// ✅ Adicionar a data apenas uma vez, formatada
+if (form.previsaoEntrega) {
+  let dataFormatada = form.previsaoEntrega;
+  if (dataFormatada.includes("/")) {
+    const [dia, mes, ano] = dataFormatada.split("/");
+    dataFormatada = `${ano}-${mes}-${dia}`;
+    
+  }
+
+
+
+
+  formData.append("previsaoEntrega", dataFormatada);
+}
       form.observacaoTexto
         .split("\n")
         .forEach((obs: string) => formData.append("observacao", obs));
@@ -143,23 +175,34 @@ export function CriarPedidoDialog() {
 
       formData.append("status", "novo");
 
-      await axios.post("http://localhost:3000/orders/com-imagem", formData);
+      await axios.post("http://localhost:3000/orders/com-imagem",
+        formData,
+      {
+    withCredentials: true,
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  }
+      );
+      
       toast.success("Pedido criado com sucesso!");
       setOpen(false);
     } catch {
       toast.error("Erro ao criar pedido");
     } finally {
       setEnviando(false);
+       setMostrarLoading(false);
     }
   };
 
   return (
+     <>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="default">Novo Pedido</Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-5xl h-[90vh] overflow-hidden p-0 bg-black/50 backdrop-blur-sm text-amber-50">
+      <DialogContent className="max-w-5xl h-[90vh] overflow-hidden p-0 bg-black/50 backdrop-blur-sm text-amber-50  ">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle>Novo Pedido via PDF</DialogTitle>
         </DialogHeader>
@@ -180,7 +223,7 @@ export function CriarPedidoDialog() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {["cliente", "email", "telefone", "endereco", "produto"].map(
+                {["nome", "email", "telefone", "endereco", "descricao"].map(
                   (field) => (
                     <div key={field}>
                       <Label className="capitalize">{field}</Label>
@@ -198,7 +241,14 @@ export function CriarPedidoDialog() {
                   <Input
                     type="date"
                     name="previsaoEntrega"
-                    value={form.previsaoEntrega?.split("T")[0] || ""}
+                    value={
+  form.previsaoEntrega
+    ? form.previsaoEntrega.includes("/")
+      ? form.previsaoEntrega.split("/").reverse().join("-") 
+      : form.previsaoEntrega.split("T")[0]
+    : ""
+}
+
                     onChange={handleChange}
                   />
                 </div>
@@ -277,6 +327,8 @@ export function CriarPedidoDialog() {
                         {enviando ? "Criando..." : "Criar Pedido"}
                       </Button>
                     </div>
+
+
                   </div>
                 </div>
               </div>
@@ -347,5 +399,20 @@ export function CriarPedidoDialog() {
         )}
       </DialogContent>
     </Dialog>
+
+
+       {/* Overlay de loading minimalista - apenas spinner e texto */}
+{mostrarLoading && (
+  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100]">
+    <div className="flex flex-col items-center">
+      <div className="animate-spin rounded-full h-20 w-20 border-4 border-t-yellow-400 border-blue-200 mb-6"></div>
+      <p className="text-white text-xl font-bold text-center">
+        Por favor, aguarde enquanto processamos seu pedido.
+      </p>
+    </div>
+  </div>
+)}
+    </>
+        
   );
 }

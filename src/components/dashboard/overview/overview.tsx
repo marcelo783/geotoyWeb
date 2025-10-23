@@ -1,7 +1,6 @@
 // src/components/dashboard/overview.tsx
 "use client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useDateFilter } from '../DateFilter/DateFilterContext';
 import { useEffect, useState } from 'react';
 
 
@@ -14,7 +13,8 @@ export function Overview() {
     const fetchData = async () => {
       try {
         const res = await fetch(`http://localhost:3000/orders/overview?year=${year}`, {
-          credentials: "include"
+          credentials: "include",
+          
         });
         const result = await res.json();
         setData(result);

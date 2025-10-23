@@ -1,6 +1,6 @@
 // src/components/dashboard/recent-sales.tsx
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { parseISO, isValid, isAfter, subDays } from "date-fns";
+import { parseISO, isValid } from "date-fns";
 
 export type SimpleOrder = {
   id: string;

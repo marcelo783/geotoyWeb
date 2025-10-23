@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from "react";
+import { useState, type JSX } from "react";
 import axios from "axios";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,7 +8,8 @@ import { formatCurrency, formatDate } from "@/utils/format";
 import { ConfirmarEnvioDialog } from "@/components/ConfirmarEnvioDialog";
 import { Plus, Clock, PackageCheck, Send, MessageCircle } from "lucide-react"; // 🆕 import do ícone de feedback
 import { toast } from "sonner";
-import Cookies from "js-cookie";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Order = {
   id: string;
@@ -146,33 +147,58 @@ const statusColumns: Record<
   },
 };
 
-export default function OrdensPage() {
-  const [ordens, setOrdens] = useState<Order[]>([]);
-  const [ordemMovida, setOrdemMovida] = useState<Order | null>(null);
-  const [statusDestino, setStatusDestino] = useState<
-    "novo" | "producao" | "finalizado" | "enviado" | "feedback" | null // 🆕 inclui feedback
-  >(null);
-  const [showDialog, setShowDialog] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+const fetchOrdens = async (): Promise<Order[]> => {
+  const res = await axios.get<Order[]>("http://localhost:3000/orders", {
+    withCredentials: true,
+  });
+  return res.data;
+};
 
-  useEffect(() => {
-    axios
-      .get("http://localhost:3000/orders", { withCredentials: true })
-      .then((res) => {
-        setOrdens(res.data);
-      });
-  }, []);
+export default function OrdensPage() {
+  const [ordemMovida, setOrdemMovida] = useState<Order | null>(null);
+  const [statusDestino, setStatusDestino] = useState<Order["status"] | null>(
+    null
+  );
+  const [showDialog, setShowDialog] = useState(false);
+
+  const queryClient = useQueryClient();
+
+  const {
+    data: ordens = [],
+    isLoading,
+    isError,
+    isFetching, // 🔥 mostra se está atualizando os dados em background
+  } = useQuery({
+    queryKey: ["ordens"],
+    queryFn: fetchOrdens,
+    staleTime: 1000 * 60 * 2, // 2 minutos de cache fresco
+    placeholderData: (prev) => prev, // mantém os dados antigos na tela
+  });
+
+  // 👉 Tela inicial com Skeleton (somente no 1º carregamento)
+  if (isLoading && ordens.length === 0) {
+    return (
+      <div className="grid grid-cols-4 gap-4 p-4">
+        {[...Array(6)].map((_, i) => (
+          <Skeleton key={i} className="h-24 w-full rounded-lg" />
+        ))}
+      </div>
+    );
+  }
+
+  if (isError) {
+    return <p className="text-red-500">Erro ao carregar ordens</p>;
+  }
 
   const onDragEnd = (result: any) => {
     const { destination, source, draggableId } = result;
     if (!destination || destination.droppableId === source.droppableId) return;
 
-    const ordem = ordens.find((o) => o.id === draggableId);
+    const ordem = ordens.find((o: Order) => o.id === draggableId);
     if (!ordem) return;
 
     setOrdemMovida(ordem);
-    setStatusDestino(destination.droppableId as Order["status"]); // 🆕 garante que pode ser feedback
+    setStatusDestino(destination.droppableId as Order["status"]);
     setShowDialog(true);
   };
 
@@ -197,14 +223,12 @@ export default function OrdensPage() {
     });
 
     try {
-      // 1) Sempre dispara e-mail
       await axios.post(
         `http://localhost:3000/orders/${ordemMovida.id}/enviar-email`,
         formData,
         { withCredentials: true }
       );
 
-      // 2) Se for enviado → usa o PATCH especial
       if (statusDestino === "enviado") {
         await axios.patch(
           `http://localhost:3000/orders/${ordemMovida.id}/enviar`,
@@ -212,7 +236,6 @@ export default function OrdensPage() {
           { withCredentials: true }
         );
       } else {
-        // Caso contrário → patch genérico
         await axios.patch(
           `http://localhost:3000/orders/${ordemMovida.id}`,
           { status: statusDestino },
@@ -220,9 +243,9 @@ export default function OrdensPage() {
         );
       }
 
-      // 3) Atualiza estado local
-      setOrdens((prev) =>
-        prev.map((o) =>
+      // 🔥 Atualiza o cache do React Query (ordens em memória)
+      queryClient.setQueryData<Order[]>(["ordens"], (old = []) =>
+        old.map((o) =>
           o.id === ordemMovida.id ? { ...o, status: statusDestino } : o
         )
       );
@@ -231,10 +254,7 @@ export default function OrdensPage() {
         `Pedido #${ordemMovida.id.slice(
           -6
         )} movido para "${statusDestino}" com sucesso!`,
-        {
-          icon: "🚀",
-          duration: 5000,
-        }
+        { icon: "🚀", duration: 5000 }
       );
 
       setShowDialog(false);
@@ -248,7 +268,9 @@ export default function OrdensPage() {
 
   return (
     <div className="p-4  overflow-x-auto">
-      {" "}
+      {isFetching && (
+        <div className="h-1 w-full bg-gradient-to-r from-red-500 to-red-700 animate-pulse" />
+      )}{" "}
       {/* 🆕 adiciona scroll horizontal */}
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="flex gap-4 min-w-[1200px]">
@@ -281,9 +303,10 @@ export default function OrdensPage() {
 
                       <ScrollArea className="max-h-[calc(100vh-180px)] pr-2">
                         <div className="space-y-3">
-                          {ordensDaColuna.map((ordem, index) => {
+                          {ordensDaColuna.map((ordem: Order, index: number) => {
                             const statusColor = getStatusColor(ordem.status);
                             const primeiraImagem = ordem.imagens?.[0];
+                            const info = getDisplayInfo(ordem);
 
                             return (
                               <Draggable
@@ -302,95 +325,8 @@ export default function OrdensPage() {
                                     >
                                       <CardContent className="p-4 space-y-3">
                                         <div className="text-sm">
-                                          {/* {ordem.urgente &&
-                                            ordem.status !== "enviado" &&
-                                            ordem.status !== "feedback" && (
-                                              <div className="flex items-center gap-1 mb-1 bg-red-500/30 border border-red-400/70 rounded-full px-3 py-1 w-fit animate-pulse">
-                                                <svg
-                                                  className="w-4 h-4 text-red-100 flex-shrink-0"
-                                                  fill="currentColor"
-                                                  viewBox="0 0 20 20"
-                                                >
-                                                  <path
-                                                    fillRule="evenodd"
-                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
-                                                    clipRule="evenodd"
-                                                  />
-                                                </svg>
-                                                <span className="text-red-100 text-xs font-bold tracking-wide">
-                                                  URGÊNCIA
-                                                </span>
-                                              </div>
-                                            )} */}
-
-                                          {/* Contador de dias - só mostra se não for enviado/feedback */}
-                                          {ordem.previsaoEntrega &&
-                                            ordem.status !== "enviado" &&
-                                            ordem.status !== "feedback" && (
-                                              <div
-                                                className={`flex items-center gap-1 ${
-                                                  ordem.urgente
-                                                    ? "bg-red-500/20 px-2 py-1 rounded-lg border border-red-400/50"
-                                                    : ""
-                                                }`}
-                                              >
-                                                <svg
-                                                  className={`w-3 h-3 flex-shrink-0 ${
-                                                    ordem.urgente
-                                                      ? "text-red-300"
-                                                      : calcularDiasRestantes(
-                                                          ordem.previsaoEntrega
-                                                        ) <= 3
-                                                      ? "text-red-400"
-                                                      : calcularDiasRestantes(
-                                                          ordem.previsaoEntrega
-                                                        ) <= 7
-                                                      ? "text-yellow-400"
-                                                      : "text-green-400"
-                                                  }`}
-                                                  fill="currentColor"
-                                                  viewBox="0 0 20 20"
-                                                >
-                                                  <path
-                                                    fillRule="evenodd"
-                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z"
-                                                    clipRule="evenodd"
-                                                  />
-                                                </svg>
-
-                                                <span
-                                                  className={`text-xs font-semibold ${
-                                                    ordem.urgente
-                                                      ? "text-red-300"
-                                                      : calcularDiasRestantes(
-                                                          ordem.previsaoEntrega
-                                                        ) <= 3
-                                                      ? "text-red-400"
-                                                      : calcularDiasRestantes(
-                                                          ordem.previsaoEntrega
-                                                        ) <= 7
-                                                      ? "text-yellow-400"
-                                                      : "text-green-400"
-                                                  }`}
-                                                >
-                                                  {ordem.urgente
-                                                    ? "URGÊNCIA - "
-                                                    : ""}
-                                                  {calcularDiasRestantes(
-                                                    ordem.previsaoEntrega
-                                                  ) > 0
-                                                    ? `${calcularDiasRestantes(
-                                                        ordem.previsaoEntrega
-                                                      )} DIAS RESTANTE!`
-                                                    : "ENTREGA ATRASADA!"}
-                                                </span>
-                                              </div>
-                                            )}
-
-                                          {/* Status de entregue para pedidos enviados ou com feedback */}
-                                          {(ordem.status === "enviado" ||
-                                            ordem.status === "feedback") && (
-                                            <div className="flex items-center gap-1 text-green-400">
+                                          {info.message && (
+                                            <div className="flex items-center gap-1">
                                               <svg
                                                 className="w-3 h-3 flex-shrink-0"
                                                 fill="currentColor"
@@ -398,12 +334,14 @@ export default function OrdensPage() {
                                               >
                                                 <path
                                                   fillRule="evenodd"
-                                                  d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z"
                                                   clipRule="evenodd"
                                                 />
                                               </svg>
-                                              <span className="text-xs font-semibold">
-                                                ENTREGUE
+                                              <span
+                                                className={`text-xs font-semibold ${info.color}`}
+                                              >
+                                                {info.message}
                                               </span>
                                             </div>
                                           )}

@@ -17,17 +17,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import DashboardPintores from "@/components/dashboard/pintores/DashboardPintores";
 import DashboardPedidos from "@/components/dashboard/pedidos/DashboardPedidos";
 import DashboardFeedback from "@/components/dashboard/feedback/DashboardFeedback";
 import {
-  DateFilterProvider,
+ 
   useDateFilter,
 } from "@/components/dashboard/DateFilter/DateFilterContext";
 import { DateFilter } from "@/components/ui/date-filter";
@@ -44,7 +39,7 @@ export type SimpleOrder = {
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [dias, setDias] = useState("7");
+
   const [orders, setOrders] = useState<SimpleOrder[]>([]);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const [freightTotals, setFreightTotals] = useState({ SEDEX: 0, PAC: 0 });
@@ -83,15 +78,29 @@ export default function DashboardPage() {
 
     fetchOrders();
   }, [dateRange]);
+  
+  type StatusType = "novo" | "producao" | "finalizado" | "enviado";
 
-  const countStatuses = (orders: SimpleOrder[]) => {
-    const counts = { novo: 0, producao: 0, finalizado: 0, enviado: 0 };
-    orders.forEach((order) => {
-      const status = order.status?.toLowerCase() ?? "novo";
-      if (counts.hasOwnProperty(status)) counts[status] += 1;
-    });
-    setStatusCounts(counts);
+
+const countStatuses = (orders: SimpleOrder[]) => {
+  const counts: Record<StatusType, number> = {
+    novo: 0, producao: 0, finalizado: 0, enviado: 0,
   };
+
+  for (const order of orders) {
+    const s = (order.status?.toLowerCase() ?? "novo") as string;
+    switch (s) {
+      case "novo": counts.novo++; break;
+      case "producao": counts.producao++; break;
+      case "finalizado": counts.finalizado++; break;
+      case "enviado": counts.enviado++; break;
+      default: counts.novo++; // fallback
+    }
+  }
+
+  setStatusCounts(counts);
+};
+
 
   const calculateFreight = (orders: SimpleOrder[]) => {
     const freight = { SEDEX: 0, PAC: 0 };

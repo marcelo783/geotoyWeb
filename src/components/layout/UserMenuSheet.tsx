@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetClose } from "../ui/sheet";
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from "../ui/sheet";
 import { Button } from "../ui/button";
-import { Eye, EyeOff, Save, User, Mail, Lock, X } from "lucide-react";
+import { Eye, EyeOff, Save, User, Mail, Lock} from "lucide-react";
 import { useUsuario } from "@/hooks/useUsuario";
 import { Input } from "../ui/input";
 import { toast } from "sonner";

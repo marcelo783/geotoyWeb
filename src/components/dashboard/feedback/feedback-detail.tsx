@@ -1,7 +1,6 @@
 // components/dashboard/feedback/feedback-detail.tsx
 import { Star, Calendar, User, Package, Mail, Phone, DollarSign, Truck, Palette, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import { useState } from "react";
 

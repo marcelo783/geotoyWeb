@@ -2,14 +2,13 @@ import {
   LayoutDashboard,
   Menu,
   Package,
-  Send,
   Settings,
-  MessageCircleMore,
   ChevronRight,
   ChevronDown,
 } from "lucide-react";
 import { useState } from "react";
 import logo from "../../../public/Camada 1.png";
+import { Link } from "react-router-dom";
 import { EmailConfigDialog } from "../email-remetente/email-config-dialog";
 
 const navItems = [
@@ -93,17 +92,17 @@ export function Sidebar() {
                 {isOpen && !collapsed && (
                   <div className="ml-8 mt-1 space-y-1">
                     {children.map((child) => {
-                      if (child.label === "Email Remetente") {
-                        return <EmailConfigDialog key={child.label} />;
-                      }
-                      return (
-                        <a
-                          key={child.href}
-                          href={child.href}
-                          className="block px-3 py-1 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-md"
-                        >
-                          {child.label}
-                        </a>
+  if (child.label === "Email Remetente") {
+    return <EmailConfigDialog key={child.label} />;
+  }
+  return (
+    <Link
+      key={child.href}
+      to={child.href}
+      className="block px-3 py-1 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-md"
+    >
+      {child.label}
+    </Link>
                       );
                     })}
                   </div>
@@ -113,14 +112,14 @@ export function Sidebar() {
           }
 
           return (
-            <a
-              key={href}
-              href={href}
-              className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-muted hover:text-foreground transition-colors"
-            >
-              <Icon className="w-4 h-4" />
-              {!collapsed && <span>{label}</span>}
-            </a>
+             <Link
+    key={href}
+    to={href}
+    className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-muted hover:text-foreground transition-colors"
+  >
+    <Icon className="w-4 h-4" />
+    {!collapsed && <span>{label}</span>}
+  </Link>
           );
         })}
       </nav>

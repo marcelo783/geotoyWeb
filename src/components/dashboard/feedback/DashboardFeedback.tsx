@@ -36,7 +36,7 @@ export default function DashboardFeedback() {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [selectedFeedback, setSelectedFeedback] = useState<any>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [metrics, setMetrics] = useState<any>(null);
+  const [ setMetrics] = useState<any>(null);
   const { dateRange } = useDateFilter();
 
   useEffect(() => {
@@ -89,13 +89,17 @@ export default function DashboardFeedback() {
         }));
         
         setLoading(false);
-      } catch (error) {
-        console.error("Erro ao buscar feedbacks:", error);
-        if (error.response) {
-          console.error("Resposta do erro:", error.response.data);
-        }
-        setLoading(false);
-      }
+     } catch (error) {
+  if (axios.isAxiosError(error)) {
+    console.error("Erro ao buscar feedbacks:", error.message);
+    if (error.response) {
+      console.error("Resposta do erro:", error.response.data);
+    }
+  } else {
+    console.error("Erro inesperado:", error);
+  }
+  setLoading(false);
+}
     };
 
     fetchData();

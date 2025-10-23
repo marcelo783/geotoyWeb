@@ -4,10 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
-import Cookies from 'js-cookie'
+
+import { useUsuario } from '@/hooks/useUsuario';
 
 const LoginForm = () => {
   const navigate = useNavigate();
+  const { fetchUsuario } = useUsuario();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
@@ -35,52 +37,40 @@ const handleSubmit = async (e: React.FormEvent) => {
   setSuccess('');
 
   try {
-   if (isLogin) {
-  const response = await axios.post(
-    'http://localhost:3000/auth/login',
-    {
-      email: formData.email,
-      senha: formData.senha,
-    },
-    { withCredentials: true }
-  );
-
-  const { name, email } = response.data.usuario || {}; // <-- seu backend precisa enviar isso
-  
-  localStorage.setItem('usuario', JSON.stringify({ name, email }));
-
-  toast.success('Login realizado com sucesso!');
-  navigate('/ordens');
-  
-
-    } else {
-      if (formData.senha !== formData.confirmSenha) {
-        throw new Error('As senhas não coincidem');
-      }
-
+    if (isLogin) {
       await axios.post(
-        'http://localhost:3000/auth/register',
-        {
-          name: formData.name,
-          email: formData.email,
-          senha: formData.senha,
-        },
-        {
-          withCredentials: true, // opcional no register se não envia cookie
-        }
+        "http://localhost:3000/auth/login",
+        { email: formData.email, senha: formData.senha },
+        { withCredentials: true }
       );
 
-      setSuccess('Usuário criado com sucesso! Faça login');
+      // 👉 Agora só navega quando já atualizou o usuário
+      await fetchUsuario();
+
+      toast.success("Login realizado com sucesso!");
+      navigate("/ordens");
+    } else {
+      if (formData.senha !== formData.confirmSenha) {
+        throw new Error("As senhas não coincidem");
+      }
+
+      await axios.post("http://localhost:3000/auth/register", {
+        name: formData.name,
+        email: formData.email,
+        senha: formData.senha,
+      });
+
+      setSuccess("Usuário criado com sucesso! Faça login");
       setIsLogin(true);
       setFormData((prev) => ({
         ...prev,
-        senha: '',
-        confirmSenha: '',
+        senha: "",
+        confirmSenha: "",
       }));
     }
   } catch (err: any) {
     const errorMessage =
-      err.response?.data?.message || err.message || 'Ocorreu um erro';
+      err.response?.data?.message || err.message || "Ocorreu um erro";
     setError(errorMessage);
     toast.error(errorMessage);
   } finally {

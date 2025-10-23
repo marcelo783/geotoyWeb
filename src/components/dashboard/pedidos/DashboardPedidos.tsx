@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ChevronDown, PlusCircle, Package, Clock, CheckCircle, Truck, AlertCircle } from "lucide-react";
+import { ChevronDown, Package, Clock, CheckCircle, Truck, AlertCircle } from "lucide-react";
 import OrderTable from "./data-table-view";
 import OrderDetail from "./order-detail";
 import { useDateFilter } from "../DateFilter/DateFilterContext";
@@ -86,19 +86,20 @@ export default function DashboardPedidos() {
         }));
         
         // Calcular contagem por status
-        const counts = {
-          novo: 0,
-          producao: 0,
-          finalizado: 0,
-          enviado: 0
-        };
-        
-        orders.forEach((order: any) => {
-          const status = order.status?.toLowerCase();
-          if (status in counts) {
-            counts[status as keyof typeof counts] += 1;
-          }
-        });
+     type StatusType = "novo" | "producao" | "finalizado" | "enviado";
+      const counts: Record<StatusType, number> = {
+        novo: 0,
+        producao: 0,
+        finalizado: 0,
+        enviado: 0,
+      };
+
+      orders.forEach((order: any) => {
+        const status = (order.status?.toLowerCase() ?? "novo") as StatusType;
+        if (status in counts) {
+          counts[status] += 1;
+        }
+      });
         
         setStatusCounts(counts);
         setLoading(false);

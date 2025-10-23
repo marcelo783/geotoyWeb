@@ -6,15 +6,17 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
+  getPaginationRowModel,  
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
   type ColumnFiltersState,
+  type OnChangeFn,
+  type PaginationState,
   type SortingState,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { ChevronDown } from "lucide-react";
+
 
 import {
   Table,
@@ -24,26 +26,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuTrigger,
+
 } from "@/components/ui/dropdown-menu";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  pagination: {
-    pageIndex: number;
-    pageSize: number;
-  };
-  onPaginationChange: (pagination: {
-    pageIndex: number;
-    pageSize: number;
-  }) => void;
+  pagination: PaginationState;
+  onPaginationChange: OnChangeFn<PaginationState>; // 👈 corrige aqui
 }
+ 
 
 export function DataTable<TData, TValue>({
   columns,
