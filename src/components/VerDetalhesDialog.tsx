@@ -13,7 +13,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { toast } from "sonner";
-import axios from "axios";
 //import { OrderForm, OrderStatus } from "@/types/orders";
 
 import {
@@ -30,6 +29,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { X } from "lucide-react";
 import type { OrderUpdatePayload } from "@/types/order";
+import api from "@/services/api";
 
 type Props = {
   ordem: {
@@ -116,8 +116,8 @@ const handleUpdate = async () => {
 
       console.log("PATCH payload →", payload);
 
-      await axios.patch(`http://localhost:3000/orders/${ordem.id}`, payload, {
-         withCredentials: true,
+      await api.patch(`/orders/${ordem.id}`, payload, {
+        
       } ) ;
       toast.success("Ordem atualizada com sucesso");
     } catch (err) {
@@ -347,9 +347,9 @@ const handleUpdate = async () => {
                     <AlertDialogAction
                       onClick={async () => {
                         try {
-                          await axios.delete(
-                            `http://localhost:3000/orders/${ordem.id}`,{
-                             withCredentials: true,
+                          await api.delete(
+                            `/orders/${ordem.id}`,{
+                             
                             }
                           );
                           toast.success("Ordem apagada com sucesso");

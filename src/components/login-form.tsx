@@ -1,11 +1,12 @@
 // src/components/LoginForm.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useUsuario } from '@/hooks/useUsuario';
+import api from '@/services/api';
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -38,10 +39,10 @@ const handleSubmit = async (e: React.FormEvent) => {
 
   try {
     if (isLogin) {
-      await axios.post(
-        "http://localhost:3000/auth/login",
+      await api.post(
+        "auth/login",
         { email: formData.email, senha: formData.senha },
-        { withCredentials: true }
+      
       );
 
       // 👉 Agora só navega quando já atualizou o usuário
@@ -54,7 +55,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         throw new Error("As senhas não coincidem");
       }
 
-      await axios.post("http://localhost:3000/auth/register", {
+      await api.post("/auth/register", {
         name: formData.name,
         email: formData.email,
         senha: formData.senha,

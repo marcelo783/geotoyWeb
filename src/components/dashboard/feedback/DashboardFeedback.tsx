@@ -23,6 +23,7 @@ import FeedbackTable from "./feedback-table";
 import FeedbackDetail from "./feedback-detail";
 import { useDateFilter } from "../DateFilter/DateFilterContext";
 import axios from "axios";
+import api from "@/services/api";
 
 export default function DashboardFeedback() {
   const [filter, setFilter] = useState("");
@@ -63,7 +64,7 @@ export default function DashboardFeedback() {
         console.log("Enviando parâmetros para a API:", params);
         
         // Buscar feedbacks
-        const feedbackResponse = await axios.get("http://localhost:3000/avaliacao", {
+        const feedbackResponse = await api.get("/avaliacao", {
           params,
           withCredentials: true
         });
@@ -74,7 +75,7 @@ export default function DashboardFeedback() {
         });
         
         // Buscar métricas de feedback
-        const metricsResponse = await axios.get("http://localhost:3000/avaliacao/metrics", {
+        const metricsResponse = await api.get("/avaliacao/metrics", {
           params,
           withCredentials: true
         });

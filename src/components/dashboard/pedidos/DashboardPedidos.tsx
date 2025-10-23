@@ -22,6 +22,7 @@ import { ChevronDown, Package, Clock, CheckCircle, Truck, AlertCircle } from "lu
 import OrderTable from "./data-table-view";
 import OrderDetail from "./order-detail";
 import { useDateFilter } from "../DateFilter/DateFilterContext";
+import api from "@/services/api";
 
 export default function DashboardPedidos() {
   const [filter, setFilter] = useState("");
@@ -44,49 +45,36 @@ export default function DashboardPedidos() {
 
     const { dateRange } = useDateFilter();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setError(null);
-        
-        // Construir parâmetros de query baseados no filtro de data
-        const params: any = {};
-        if (dateRange.startDate) {
-          params.startDate = dateRange.startDate.toISOString();
-        }
-        if (dateRange.endDate) {
-          // Ajustar para fim do dia
-          const endOfDay = new Date(dateRange.endDate);
-          endOfDay.setHours(23, 59, 59, 999);
-          params.endDate = endOfDay.toISOString();
-        }
-        
-        const response = await fetch(`http://localhost:3000/orders?${new URLSearchParams(params)}`, {
-          credentials: 'include' // Inclui cookies para autenticação
-        });
-        
-        if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error("Não autorizado. Faça login novamente.");
-          }
-          throw new Error(`Erro ${response.status}: ${response.statusText}`);
-        }
-        
-        const orders = await response.json();
-        
-        // Verifica se a resposta é um array
-        if (!Array.isArray(orders)) {
-          throw new Error("Resposta da API não é um array de pedidos");
-        }
-        
-        setData(orders);
-        setPagination(prev => ({
-          ...prev,
-          totalItems: orders.length
-        }));
-        
-        // Calcular contagem por status
-     type StatusType = "novo" | "producao" | "finalizado" | "enviado";
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      setError(null);
+
+      // Construir parâmetros de query baseados no filtro de data
+      const params: any = {};
+      if (dateRange.startDate) {
+        params.startDate = dateRange.startDate.toISOString();
+      }
+      if (dateRange.endDate) {
+        const endOfDay = new Date(dateRange.endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        params.endDate = endOfDay.toISOString();
+      }
+
+      const { data: orders } = await api.get("/orders", { params });
+
+      if (!Array.isArray(orders)) {
+        throw new Error("Resposta da API não é um array de pedidos");
+      }
+
+      setData(orders);
+      setPagination((prev) => ({
+        ...prev,
+        totalItems: orders.length,
+      }));
+
+      // ✅ Calcular contagem por status
+      type StatusType = "novo" | "producao" | "finalizado" | "enviado";
       const counts: Record<StatusType, number> = {
         novo: 0,
         producao: 0,
@@ -96,22 +84,25 @@ export default function DashboardPedidos() {
 
       orders.forEach((order: any) => {
         const status = (order.status?.toLowerCase() ?? "novo") as StatusType;
-        if (status in counts) {
-          counts[status] += 1;
-        }
+        if (status in counts) counts[status] += 1;
       });
-        
-        setStatusCounts(counts);
-        setLoading(false);
-      } catch (error) {
-        console.error("Erro ao buscar pedidos:", error);
-        setError(error instanceof Error ? error.message : "Erro desconhecido");
-        setLoading(false);
-      }
-    };
 
-    fetchData();
-  }, [dateRange]);
+      setStatusCounts(counts);
+    } catch (err: any) {
+      console.error("Erro ao buscar pedidos:", err);
+
+      if (err.response?.status === 401) {
+        setError("Sessão expirada. Faça login novamente.");
+      } else {
+        setError(err.message || "Erro desconhecido");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, [dateRange]);
 
   const handleViewDetails = (order: any) => {
     setSelectedOrder(order);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import axios from "axios";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import {
   useDateFilter,
 } from "@/components/dashboard/DateFilter/DateFilterContext";
 import { DateFilter } from "@/components/ui/date-filter";
+import api from "@/services/api";
 
 export type SimpleOrder = {
   id: string;
@@ -61,9 +62,8 @@ export default function DashboardPage() {
           params.endDate = endOfDay.toISOString();
         }
 
-        const response = await axios.get("http://localhost:3000/orders", {
-          params,
-          withCredentials: true,
+        const response = await api.get("/orders", {
+      
         });
 
         const fetchedOrders: SimpleOrder[] = response.data;

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useDateFilter } from "../DateFilter/DateFilterContext";
+import api from "@/services/api";
 
 interface PintorCount {
   pintor: string;
@@ -13,33 +14,30 @@ export default function DashboardPintores() {
   const [pintores, setPintores] = useState<PintorCount[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchCount() {
-      try {
-        const params = new URLSearchParams();
-        if (dateRange.startDate) {
-          params.append("startDate", dateRange.startDate.toISOString());
-        }
-        if (dateRange.endDate) {
-          params.append("endDate", dateRange.endDate.toISOString());
-        }
-
-        const res = await fetch(`http://localhost:3000/orders/count-all-pintores?${params.toString()}`,{
- method: 'GET',
- credentials: 'include',
-        });
-        if (!res.ok) throw new Error("Erro ao buscar contador");
-        const data: PintorCount[] = await res.json();
-        setPintores(data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
+ useEffect(() => {
+  async function fetchCount() {
+    try {
+      const params = new URLSearchParams();
+      if (dateRange.startDate) {
+        params.append("startDate", dateRange.startDate.toISOString());
       }
-    }
+      if (dateRange.endDate) {
+        params.append("endDate", dateRange.endDate.toISOString());
+      }
 
-    fetchCount();
-  }, [dateRange])
+      const res = await api.get(`/orders/count-all-pintores?${params.toString()}`);
+      setPintores(res.data);
+      
+    } catch (error) {
+      console.error("Erro ao buscar contador:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchCount();
+}, [dateRange]);
+
 
   // Calcular estatísticas
   const totalPintores = pintores.length;

@@ -4,6 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Star } from 'lucide-react';
 import  logogeotoy from '../../../public/Camada 1.png'
 import  logogeo from '../../../public/cropped-A.png'
+import api from '@/services/api';
 
 const AvaliacaoPage = () => {
   const [rating, setRating] = useState({
@@ -24,32 +25,30 @@ const AvaliacaoPage = () => {
   }, [])
 
 const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!orderId) {
-      alert("ID do pedido não encontrado");
-      return;
-    }
+  e.preventDefault();
+  if (!orderId) {
+    alert("ID do pedido não encontrado");
+    return;
+  }
 
-    try {
-      const response = await fetch("http://localhost:3000/avaliacao", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderId, // ✅ agora vem do link
-          atendimento: rating.atendimento,
-          tempoEntrega: rating.tempoEntrega,
-          qualidadeMaterial: rating.qualidadeMaterial,
-          comentario,
-        }),
-      });
+  try {
+    const response = await api.post("/avaliacao", {
+      orderId,
+      atendimento: rating.atendimento,
+      tempoEntrega: rating.tempoEntrega,
+      qualidadeMaterial: rating.qualidadeMaterial,
+      comentario,
+    });
 
-      if (!response.ok) throw new Error("Erro ao enviar feedback");
+    console.log("Feedback enviado ✅:", response.data);
+    alert("Feedback enviado com sucesso!");
+    
+  } catch (err: any) {
+    console.error("Erro ao enviar feedback ❌:", err);
+    alert(err.response?.data?.message || "Erro ao enviar feedback");
+  }
+};
 
-      alert("Feedback enviado com sucesso!");
-    } catch (err) {
-      console.error("Erro ao enviar feedback ❌", err);
-    }
-  };
 
 
   const RatingStars = ({ 

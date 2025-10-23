@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Eye, EyeOff, Mail, Lock, Save } from "lucide-react"
-import axios from "axios"
+
 import { toast } from "sonner"
+import api from "@/services/api"
 
 export function EmailConfigDialog() {
   const [email, setEmail] = useState("")
@@ -23,7 +24,7 @@ export function EmailConfigDialog() {
   useEffect(() => {
     if (open) {
       setLoading(true)
-      axios.get("http://localhost:3000/email-config", { withCredentials: true })
+      api.get("/email-config", { withCredentials: true })
         .then(res => {
           setEmail(res.data.email || "")
           setHasPassword(!!res.data.hasPassword)
@@ -47,7 +48,7 @@ export function EmailConfigDialog() {
 
     try {
       setLoading(true)
-      await axios.post("http://localhost:3000/email-config", { email, password }, { withCredentials: true })
+      await api.post("/email-config", { email, password }, { withCredentials: true })
       toast.success("Configuração de e-mail salva com sucesso!")
       setOpen(false)
     } catch (err: any) {

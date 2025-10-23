@@ -18,7 +18,8 @@ import {
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { useEffect, useState } from "react";
-import axios from "axios";
+
+import api from "@/services/api";
 
 type Status = "novo" | "producao" | "finalizado" | "enviado" | "feedback";
 
@@ -58,9 +59,9 @@ export function ConfirmarEnvioDialog({
 
 useEffect(() => {
   setLoadingMensagem(true);
-  axios
-    .get(`http://localhost:3000/orders/mensagens/${statusDestino}`,{
-       withCredentials: true,
+  api
+    .get(`/orders/mensagens/${statusDestino}`,{
+      
     })
      
     .then((res) => {

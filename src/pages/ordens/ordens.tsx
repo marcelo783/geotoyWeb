@@ -1,5 +1,5 @@
 import { useState, type JSX } from "react";
-import axios from "axios";
+
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Card, CardContent } from "@/components/ui/card";
 import { VerDetalhesDialog } from "@/components/VerDetalhesDialog";
@@ -10,6 +10,7 @@ import { Plus, Clock, PackageCheck, Send, MessageCircle } from "lucide-react"; /
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import api from "@/services/api";
 
 type Order = {
   id: string;
@@ -148,8 +149,8 @@ const statusColumns: Record<
 };
 
 const fetchOrdens = async (): Promise<Order[]> => {
-  const res = await axios.get<Order[]>("http://localhost:3000/orders", {
-    withCredentials: true,
+  const res = await api.get<Order[]>("/orders", {
+  
   });
   return res.data;
 };
@@ -223,21 +224,21 @@ export default function OrdensPage() {
     });
 
     try {
-      await axios.post(
-        `http://localhost:3000/orders/${ordemMovida.id}/enviar-email`,
+      await api.post(
+        `/orders/${ordemMovida.id}/enviar-email`,
         formData,
         { withCredentials: true }
       );
 
       if (statusDestino === "enviado") {
-        await axios.patch(
-          `http://localhost:3000/orders/${ordemMovida.id}/enviar`,
+        await api.patch(
+          `3000/orders/${ordemMovida.id}/enviar`,
           { codigoRastreamento: data.codigoRastreio },
           { withCredentials: true }
         );
       } else {
-        await axios.patch(
-          `http://localhost:3000/orders/${ordemMovida.id}`,
+        await api.patch(
+          `/orders/${ordemMovida.id}`,
           { status: statusDestino },
           { withCredentials: true }
         );

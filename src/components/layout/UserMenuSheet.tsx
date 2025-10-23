@@ -6,8 +6,9 @@ import { Eye, EyeOff, Save, User, Mail, Lock} from "lucide-react";
 import { useUsuario } from "@/hooks/useUsuario";
 import { Input } from "../ui/input";
 import { toast } from "sonner";
-import axios from "axios";
+
 import { Skeleton } from "../ui/skeleton";
+import api from "@/services/api";
 
 export function UserMenuSheet() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -38,8 +39,8 @@ const handleSalvar = async () => {
   try {
     setIsSaving(true);
 
-    await axios.patch("http://localhost:3000/users/update", form, {
-      withCredentials: true,
+    await api.patch("/users/update", form, {
+    
     });
 
     toast.success("Perfil atualizado com sucesso!");

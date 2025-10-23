@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+
 import type { Usuario } from "@/types/user";
+import api from "@/services/api";
 
 export function useUsuario() {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
@@ -8,8 +9,8 @@ export function useUsuario() {
 
   const fetchUsuario = async () => {
     try {
-      const res = await axios.get<Usuario>("http://localhost:3000/auth/me", {
-        withCredentials: true,
+      const res = await api.get<Usuario>("/auth/me", {
+      
       });
       setUsuario(res.data);
     } catch {

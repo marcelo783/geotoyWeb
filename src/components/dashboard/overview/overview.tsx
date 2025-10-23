@@ -2,6 +2,7 @@
 "use client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useEffect, useState } from 'react';
+import api from '@/services/api';
 
 
 
@@ -9,22 +10,20 @@ export function Overview() {
   const [data, setData] = useState([]);
   const [year, setYear] = useState(new Date().getFullYear());
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch(`http://localhost:3000/orders/overview?year=${year}`, {
-          credentials: "include",
-          
-        });
-        const result = await res.json();
-        setData(result);
-      } catch (err) {
-        console.error("Erro ao carregar overview:", err);
-      }
-    };
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const { data } = await api.get("/orders/overview", {
+        params: { year },
+      });
+      setData(data);
+    } catch (err) {
+      console.error("Erro ao carregar overview:", err);
+    }
+  };
 
-    fetchData();
-  }, [year]);
+  fetchData();
+}, [year]);
 
   return (
     <div className="h-[350px]">

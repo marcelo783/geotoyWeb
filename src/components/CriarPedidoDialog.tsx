@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
 import { toast } from "sonner";
-import axios from "axios";
+
 
 import {
   Dialog as PreviewDialog,
@@ -31,6 +31,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Checkbox } from "./ui/checkbox";
+import api from "@/services/api";
 
 export function CriarPedidoDialog() {
   const [open, setOpen] = useState(false);
@@ -59,12 +60,12 @@ export function CriarPedidoDialog() {
     setCarregando(true);
 
     try {
-      const res = await axios.post(
-        "http://localhost:3000/orders/pdf",
+      const res = await api.post(
+        "/orders/pdf",
         formData,
         {
-    withCredentials: true,
-    headers: { "Content-Type": "multipart/form-data" },
+  
+   
   }
       );
       setDados(res.data);
@@ -175,13 +176,10 @@ if (form.previsaoEntrega) {
 
       formData.append("status", "novo");
 
-      await axios.post("http://localhost:3000/orders/com-imagem",
+      await api.post("/orders/com-imagem",
         formData,
       {
-    withCredentials: true,
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
+  
   }
       );
       
