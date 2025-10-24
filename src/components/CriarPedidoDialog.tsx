@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Checkbox } from "./ui/checkbox";
 import api from "@/services/api";
+import axios from "axios";
 
 export function CriarPedidoDialog() {
   const [open, setOpen] = useState(false);
@@ -60,8 +61,8 @@ export function CriarPedidoDialog() {
     setCarregando(true);
 
     try {
-      const res = await api.post(
-        "/orders/pdf",
+      const res = await axios.post(
+        "https://geotoypython.onrender.com/extract",
         formData,
         {
   

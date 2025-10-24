@@ -42,7 +42,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       await api.post(
         "auth/login",
         { email: formData.email, senha: formData.senha },
-      
+      { withCredentials: true }
       );
 
       // 👉 Agora só navega quando já atualizou o usuário
