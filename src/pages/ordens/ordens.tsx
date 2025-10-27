@@ -232,7 +232,7 @@ export default function OrdensPage() {
 
       if (statusDestino === "enviado") {
         await api.patch(
-          `3000/orders/${ordemMovida.id}/enviar`,
+          `/orders/${ordemMovida.id}/enviar`,
           { codigoRastreamento: data.codigoRastreio },
           { withCredentials: true }
         );
